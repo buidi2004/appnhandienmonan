@@ -278,7 +278,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
         {/* Chef's Specials - Horizontal Scroll */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.lg }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Gợi ý từ đầu bếp ✨</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Danh sách gợi ý đầy đủ đang được cập nhật!')}>
             <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Tất cả</Text>
           </TouchableOpacity>
         </View>
@@ -323,7 +323,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
         {/* Popular Bento Grid */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.md }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Món ngon thịnh hành 🔥</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Tính năng xem thêm đang được phát triển!')}>
             <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Xem thêm</Text>
           </TouchableOpacity>
         </View>

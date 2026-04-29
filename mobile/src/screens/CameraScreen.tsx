@@ -83,7 +83,7 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
       setTimeout(() => setShowFlashOverlay(false), 50);
 
       try {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.3 });
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.1 });
         if (photo) {
           navigation.navigate('AIResult', { imageUri: photo.uri });
         }
@@ -187,7 +187,13 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.secondaryBtn}>
+            <TouchableOpacity 
+              style={styles.secondaryBtn}
+              onPress={() => {
+                setIsProcessing(false);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+            >
               <Ionicons name="reload" size={28} color="#FFF" />
             </TouchableOpacity>
           </View>

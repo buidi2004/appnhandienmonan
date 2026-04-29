@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -10,12 +10,16 @@ import {
   ScrollView, 
   Dimensions, 
   Animated,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { TabParamList } from '../../App';
+import { TabParamList, RootStackParamList } from '../../App';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Props = BottomTabScreenProps<TabParamList, 'Favorites'>;
 
@@ -24,34 +28,80 @@ const cardWidth = (width - 60) / 2;
 
 const DEFAULT_FOOD_IMAGE = 'https://images.unsplash.com/photo-1495195129352-aec325b55b65?q=80&w=600&auto=format&fit=crop';
 
-const initialFavorites = [
-  { id: '1', name: 'Phở Bò Gia Truyền', time: '45 phút', calories: '400 kcal', rating: 4.9, category: 'Món nước', image: '' }, // Rỗng để test fallback
-  { id: '2', name: 'Salad Bơ Ức Gà', time: '10 phút', calories: '250 kcal', rating: 5.0, category: 'Healthy', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=600&auto=format&fit=crop' },
-  { id: '3', name: 'Bún Chả Hà Nội', time: '30 phút', calories: '450 kcal', rating: 4.8, category: 'Đồ nướng', image: 'https://images.unsplash.com/photo-1614332287897-cdc485fa562d?q=80&w=600&auto=format&fit=crop' },
-  { id: '4', name: 'Bánh Mì Thịt Nướng', time: '15 phút', calories: '350 kcal', rating: 4.7, category: 'Ăn nhanh', image: '' }, // Rỗng để test fallback
-];
-
 const categories = ['Tất cả', 'Healthy', 'Món nước', 'Ăn nhanh', 'Đồ nướng'];
 
-export default function FavoritesScreen({ navigation }: Props) {
+export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
   const { colors, typography, spacing, borderRadius } = useAppTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  
   const [activeCategory, setActiveCategory] = useState('Tất cả');
-  const [favorites, setFavorites] = useState(initialFavorites);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [filteredFavorites, setFilteredFavorites] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [lastRemovedItem, setLastRemovedItem] = useState<any>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
   
   const snackbarAnim = useRef(new Animated.Value(100)).current;
   const undoTimer = useRef<any>(null);
 
-  const removeFavorite = (item: any) => {
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
+
+  useEffect(() => {
+    filterData();
+  }, [favorites, searchQuery, activeCategory]);
+
+  const loadFavorites = async () => {
+    try {
+      setLoading(true);
+      const stored = await AsyncStorage.getItem('favorites');
+      if (stored) {
+        setFavorites(JSON.parse(stored));
+      } else {
+        setFavorites([]);
+      }
+    } catch (e) {
+      console.error('Failed to load favorites', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterData = () => {
+    let result = [...favorites];
+    
+    if (activeCategory !== 'Tất cả') {
+      result = result.filter(f => f.category === activeCategory);
+    }
+    
+    if (searchQuery.trim()) {
+      result = result.filter(f => 
+        f.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    setFilteredFavorites(result);
+  };
+
+  const removeFavorite = async (item: any) => {
+    const updated = favorites.filter(f => (f.id || f.title) !== (item.id || item.title));
     setLastRemovedItem(item);
-    setFavorites(prev => prev.filter(f => f.id !== item.id));
+    setFavorites(updated);
+    await AsyncStorage.setItem('favorites', JSON.stringify(updated));
     triggerSnackbar();
   };
 
-  const undoRemove = () => {
+  const undoRemove = async () => {
     if (lastRemovedItem) {
-      setFavorites(prev => [...prev, lastRemovedItem].sort((a, b) => a.id.localeCompare(b.id)));
+      const updated = [...favorites, lastRemovedItem];
+      setFavorites(updated);
+      await AsyncStorage.setItem('favorites', JSON.stringify(updated));
       hideSnackbar();
     }
   };
@@ -82,13 +132,11 @@ export default function FavoritesScreen({ navigation }: Props) {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      {/* Tối ưu 3: Header gọn gàng hơn */}
       <Text style={[styles.title, typography.h1, { color: colors.text }]}>Món ăn yêu thích</Text>
       <Text style={[typography.body, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
         {favorites.length > 0 ? `Bạn đã lưu ${favorites.length} công thức nấu ăn` : 'Bạn chưa có món ăn yêu thích nào'}
       </Text>
 
-      {/* Search Bar */}
       <View style={styles.searchRow}>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: borderRadius.round }]}>
           <Ionicons name="search-outline" size={20} color={colors.textSecondary} />
@@ -96,14 +144,20 @@ export default function FavoritesScreen({ navigation }: Props) {
             placeholder="Tìm trong danh sách..."
             placeholderTextColor={colors.textSecondary}
             style={[styles.searchInput, typography.body, { color: colors.text }]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
         <TouchableOpacity style={[styles.filterBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.round }]}>
           <Ionicons name="options-outline" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
 
-      {/* Tối ưu 5: Padding Right cho Filter Scroll */}
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -136,35 +190,49 @@ export default function FavoritesScreen({ navigation }: Props) {
     </View>
   );
 
+  if (loading && favorites.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={favorites.filter(f => activeCategory === 'Tất cả' || f.category === activeCategory)}
+        data={filteredFavorites}
         numColumns={2}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={{ padding: 20, paddingBottom: 150 }}
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
-        keyExtractor={item => item.id}
+        keyExtractor={(item, index) => (item.id || item.title || index.toString())}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="heart-dislike-outline" size={80} color={colors.border} />
-            <Text style={[typography.body, { color: colors.textSecondary, marginTop: 16 }]}>Danh sách đang trống</Text>
+            <Text style={[typography.h3, { color: colors.textSecondary, marginTop: 16 }]}>
+              {favorites.length === 0 ? 'Chưa có món yêu thích' : 'Không tìm thấy kết quả'}
+            </Text>
+            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
+              {favorites.length === 0 ? 'Hãy khám phá và lưu lại những công thức bạn thích nhất!' : 'Thử tìm kiếm với từ khóa khác xem sao.'}
+            </Text>
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={[styles.card, { width: cardWidth, backgroundColor: colors.card, borderRadius: borderRadius.lg }]}>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('AIResult', { initialRecipe: item, imageUri: item.image || item.imageUrl })}
+            style={[styles.card, { width: cardWidth, backgroundColor: colors.card, borderRadius: borderRadius.lg }]}
+          >
             <View style={styles.imageContainer}>
-              {/* Tối ưu 1: Fallback Image */}
               <Image 
-                source={{ uri: item.image || DEFAULT_FOOD_IMAGE }} 
+                source={{ uri: item.image || item.imageUrl || DEFAULT_FOOD_IMAGE }} 
                 style={[styles.cardImage, { borderTopLeftRadius: borderRadius.lg, borderTopRightRadius: borderRadius.lg }]} 
               />
               <View style={styles.ratingBadge}>
                 <Ionicons name="star" size={12} color="#FFD700" />
-                <Text style={styles.ratingText}>{item.rating}</Text>
+                <Text style={styles.ratingText}>{item.rating || '5.0'}</Text>
               </View>
-              {/* Tối ưu 2: Xử lý Bỏ lưu với Snackbar */}
               <TouchableOpacity 
                 style={styles.heartIcon} 
                 onPress={() => removeFavorite(item)}
@@ -175,20 +243,20 @@ export default function FavoritesScreen({ navigation }: Props) {
             
             <View style={[styles.cardInfo, { padding: spacing.md }]}>
               <Text style={[styles.categoryText, { color: colors.secondary, marginBottom: 4, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }]}>
-                {item.category}
+                {item.category || 'Món ăn'}
               </Text>
               <Text numberOfLines={2} style={[styles.recipeName, typography.h3, { color: colors.text, height: 40 }]}>
-                {item.name}
+                {item.name || item.title}
               </Text>
               
               <View style={styles.metaData}>
                 <View style={styles.metaRow}>
                   <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, typography.caption, { color: colors.textSecondary }]}>{item.time}</Text>
+                  <Text style={[styles.metaText, typography.caption, { color: colors.textSecondary }]}>{item.time || item.prep_time || '15p'}</Text>
                 </View>
                 <View style={styles.metaRow}>
                   <Ionicons name="flame-outline" size={14} color="#FF9500" />
-                  <Text style={[styles.metaText, typography.caption, { color: colors.textSecondary }]}>{item.calories}</Text>
+                  <Text style={[styles.metaText, typography.caption, { color: colors.textSecondary }]}>{item.calories || '---'}</Text>
                 </View>
               </View>
             </View>
@@ -196,7 +264,6 @@ export default function FavoritesScreen({ navigation }: Props) {
         )}
       />
 
-      {/* Snackbar Undo */}
       <Animated.View style={[
         styles.snackbar, 
         { 
@@ -290,7 +357,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     height: 140,
     width: '100%',
-    backgroundColor: '#F3EFE9', // Fallback background color
+    backgroundColor: '#F3EFE9',
   },
   cardImage: {
     width: '100%',
@@ -357,7 +424,8 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 100,
+    marginTop: 60,
+    paddingHorizontal: 40,
   },
   snackbar: {
     position: 'absolute',

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Image, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../theme/theme';
@@ -14,16 +14,29 @@ export default function ProfileScreen({ navigation: tabNavigation }: Props) {
   const { colors, typography, spacing, borderRadius } = useAppTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [name, setName] = useState('Bùi Văn Dĩ');
+  const [stats, setStats] = useState({ cooked: 12, favorites: 3, scans: 5 });
 
   useFocusEffect(
     useCallback(() => {
-      const loadAvatar = async () => {
+      const loadProfileData = async () => {
         try {
           const savedAvatar = await AsyncStorage.getItem('userAvatar');
+          const savedName = await AsyncStorage.getItem('userName');
+          const savedFavorites = await AsyncStorage.getItem('favorites');
+          
           if (savedAvatar) setAvatar(savedAvatar);
-        } catch (e) {}
+          if (savedName) setName(savedName);
+          
+          if (savedFavorites) {
+            const favs = JSON.parse(savedFavorites);
+            setStats(prev => ({ ...prev, favorites: favs.length }));
+          }
+        } catch (e) {
+          console.error('Failed to load profile data', e);
+        }
       };
-      loadAvatar();
+      loadProfileData();
     }, [])
   );
 
@@ -32,8 +45,8 @@ export default function ProfileScreen({ navigation: tabNavigation }: Props) {
       title: 'TÀI KHOẢN',
       items: [
         { icon: 'person-circle', text: 'Chỉnh sửa hồ sơ', color: '#007AFF', route: 'EditProfile' }, 
-        { icon: 'time', text: 'Lịch sử quét AI', color: '#FF9500', route: 'Notifications' },           
-        { icon: 'restaurant', text: 'Món ăn tự tạo', color: '#34C759', route: 'MainTabs' },          
+        { icon: 'heart', text: 'Món ăn yêu thích', color: '#FF3B30', route: 'FavoritesTab' },           
+        { icon: 'time', text: 'Lịch sử quét AI', color: '#FF9500', route: 'Notifications' },          
       ]
     },
     {
@@ -84,52 +97,56 @@ export default function ProfileScreen({ navigation: tabNavigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.name, typography.h2, { color: colors.text, marginTop: spacing.md }]}>Bùi Văn Dĩ</Text>
+        <Text style={[styles.name, typography.h2, { color: colors.text, marginTop: spacing.md }]}>{name}</Text>
         <View style={[styles.badge, { backgroundColor: `${colors.primary}20` }]}>
           <Text style={[styles.badgeText, { color: colors.primary }]}>ĐẦU BẾP TƯƠNG LAI</Text>
         </View>
 
         <View style={styles.bentoGrid}>
-          {/* Top Block: Đã nấu - Chiếm trọn chiều ngang */}
-          <View style={[styles.bentoLarge, { backgroundColor: '#FFF5E6', borderRadius: 28 }]}>
+          <View style={[styles.bentoLarge, { backgroundColor: colors.card, borderRadius: 28 }]}>
             <View style={styles.bentoHeader}>
               <View style={[styles.bentoIconWrapper, { backgroundColor: '#FF950020' }]}>
                 <Ionicons name="restaurant" size={22} color="#FF9500" />
               </View>
               <View style={styles.bentoTitleContainer}>
                 <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: 'bold' }]}>ĐÃ NẤU</Text>
-                <Text style={[typography.h2, { color: colors.text, fontWeight: 'bold' }]}>12 <Text style={[typography.body, { fontWeight: 'normal', color: colors.textSecondary }]}>món</Text></Text>
+                <Text style={[typography.h2, { color: colors.text, fontWeight: 'bold' }]}>{stats.cooked} <Text style={[typography.body, { fontWeight: 'normal', color: colors.textSecondary }]}>món</Text></Text>
               </View>
             </View>
             <View style={styles.progressContainer}>
-              <View style={[styles.progressBarBase, { backgroundColor: '#E0E0E0' }]}>
+              <View style={[styles.progressBarBase, { backgroundColor: colors.border }]}>
                 <View style={[styles.progressBarFill, { backgroundColor: '#FF9500', width: '60%' }]} />
               </View>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>60% mục tiêu tháng này</Text>
             </View>
           </View>
 
-          {/* Bottom Row: 2 ô vuông nhỏ */}
           <View style={styles.bentoRow}>
-            <View style={[styles.bentoSmall, { backgroundColor: '#FFF5E6', borderRadius: 24 }]}>
+            <TouchableOpacity 
+              onPress={() => tabNavigation.navigate('Favorites')}
+              style={[styles.bentoSmall, { backgroundColor: colors.card, borderRadius: 24 }]}
+            >
               <View style={[styles.bentoIconWrapper, { backgroundColor: '#FF3B3020', marginBottom: 8 }]}>
                 <Ionicons name="heart" size={20} color="#FF3B30" />
               </View>
-              <Text style={[typography.h3, { color: colors.text, fontWeight: 'bold' }]}>3</Text>
+              <Text style={[typography.h3, { color: colors.text, fontWeight: 'bold' }]}>{stats.favorites}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Yêu thích</Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={[styles.bentoSmall, { backgroundColor: '#FFF5E6', borderRadius: 24 }]}>
+            <View style={[styles.bentoSmall, { backgroundColor: colors.card, borderRadius: 24 }]}>
               <View style={[styles.bentoIconWrapper, { backgroundColor: '#007AFF20', marginBottom: 8 }]}>
                 <Ionicons name="scan" size={20} color="#007AFF" />
               </View>
-              <Text style={[typography.h3, { color: colors.text, fontWeight: 'bold' }]}>5</Text>
+              <Text style={[typography.h3, { color: colors.text, fontWeight: 'bold' }]}>{stats.scans}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Nhận diện</Text>
             </View>
           </View>
         </View>
 
-        <TouchableOpacity style={[styles.premiumBanner, { backgroundColor: '#1A1A1A', borderRadius: borderRadius.lg }]}>
+        <TouchableOpacity 
+          style={[styles.premiumBanner, { backgroundColor: '#1A1A1A', borderRadius: borderRadius.lg }]}
+          onPress={() => Alert.alert('Gói Premium', 'Tính năng đang được phát triển. Bạn sẽ sớm có thể truy cập hàng nghìn công thức độc quyền!')}
+        >
           <View style={styles.premiumContent}>
             <Ionicons name="star" size={24} color="#FFD700" />
             <View style={styles.premiumText}>
@@ -150,7 +167,13 @@ export default function ProfileScreen({ navigation: tabNavigation }: Props) {
                 <View key={index}>
                   <TouchableOpacity 
                     style={styles.menuItem}
-                    onPress={() => navigation.navigate(item.route as any)}
+                    onPress={() => {
+                      if (item.route === 'FavoritesTab') {
+                        tabNavigation.navigate('Favorites');
+                      } else {
+                        navigation.navigate(item.route as any);
+                      }
+                    }}
                   >
                     <View style={styles.menuItemLeft}>
                       <View style={[styles.iconContainer, { backgroundColor: `${item.color}15` }]}>

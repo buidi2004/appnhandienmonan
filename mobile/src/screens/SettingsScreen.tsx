@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
 
 export default function SettingsScreen() {
   const { colors, typography, spacing, borderRadius, isDark, isSystem, setManualTheme, setSystemTheme } = useAppTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   
   const [pushNotif, setPushNotif] = useState(true);
   const [emailNotif, setEmailNotif] = useState(false);
@@ -85,14 +89,14 @@ export default function SettingsScreen() {
         {renderSettingRow('language-outline', 'Ngôn ngữ', false, 'Tiếng Việt')}
 
         <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>BẢO MẬT</Text>
-        {renderSettingRow('lock-closed-outline', 'Đổi mật khẩu', false)}
+        {renderSettingRow('lock-closed-outline', 'Đổi mật khẩu', false, undefined, undefined, undefined, () => Alert.alert('Tính năng', 'Đang kết nối với máy chủ xác thực...'))}
         {renderSettingRow('finger-print-outline', 'Xác thực sinh trắc học', true, true)}
 
         {/* Nhóm 3: Hỗ trợ & Thông tin */}
         <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>HỖ TRỢ & THÔNG TIN</Text>
-        {renderSettingRow('information-circle-outline', 'Giới thiệu', false, 'Bản 1.0.0')}
-        {renderSettingRow('document-text-outline', 'Điều khoản & Chính sách', false)}
-        {renderSettingRow('bug-outline', 'Báo lỗi / Gửi phản hồi', false)}
+        {renderSettingRow('information-circle-outline', 'Giới thiệu', false, 'Bản 1.0.0', undefined, undefined, () => Alert.alert('Smart Cooking AI', 'Ứng dụng hỗ trợ nấu ăn thông minh hàng đầu.\nPhiên bản 1.0.0\n© 2026 SmartCooking Team'))}
+        {renderSettingRow('document-text-outline', 'Điều khoản & Chính sách', false, undefined, undefined, undefined, () => navigation.navigate('Terms'))}
+        {renderSettingRow('bug-outline', 'Báo lỗi / Gửi phản hồi', false, undefined, undefined, undefined, () => Alert.alert('Phản hồi', 'Cảm ơn bạn! Chúng tôi đã ghi nhận yêu cầu hỗ trợ.'))}
 
         <TouchableOpacity 
           style={[styles.deleteBtn, { marginTop: spacing.xl, padding: spacing.md, borderRadius: borderRadius.md, backgroundColor: `${colors.error}10` }]}

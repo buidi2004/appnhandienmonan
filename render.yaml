@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: app-nau-an-backend
+    name: appnhandienmonan
     env: python
     # Vì backend nằm trong thư mục con nên ta cần build và chạy từ đó
     buildCommand: pip install -r backend/requirements.txt

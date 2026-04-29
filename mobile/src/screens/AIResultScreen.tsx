@@ -74,7 +74,8 @@ const SafeImage = ({ uri, style }: { uri?: string, style: any }) => {
 export default function AIResultScreen({ route, navigation }: Props) {
   const { colors, typography, spacing, borderRadius } = useAppTheme();
   const { imageUri, initialIngredients, initialRecipe } = route.params;
-  const [loading, setLoading] = useState(!initialRecipe);
+  const [isScanning, setIsScanning] = useState(!initialRecipe);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(initialRecipe ? '' : 'Đang khởi tạo...');
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipe ? [initialRecipe] : []);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>(initialIngredients || (initialRecipe ? initialRecipe.ingredients : []));
@@ -97,16 +98,38 @@ export default function AIResultScreen({ route, navigation }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (initialRecipe) {
-      setLoading(false);
-    } else if (initialIngredients && initialIngredients.length > 0) {
-      suggestRecipesDirectly(initialIngredients);
-    } else if (imageUri) {
-      analyzeImage();
-    } else {
-      setLoading(false);
-    }
+    const init = async () => {
+      if (initialRecipe) {
+        setIsScanning(false);
+        checkIfBookmarked([initialRecipe]);
+      } else if (initialIngredients && initialIngredients.length > 0) {
+        await suggestRecipesDirectly(initialIngredients);
+      } else if (imageUri) {
+        await analyzeImage();
+      } else {
+        setIsScanning(false);
+      }
+    };
+    init();
   }, []);
+
+  const checkIfBookmarked = async (recipeList: Recipe[]) => {
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      if (stored) {
+        const currentFavorites = JSON.parse(stored);
+        const newBookmarked: Record<number, boolean> = {};
+        recipeList.forEach((recipe, index) => {
+          if (currentFavorites.some((f: any) => f.title === recipe.title)) {
+            newBookmarked[index] = true;
+          }
+        });
+        setBookmarked(newBookmarked);
+      }
+    } catch (e) {
+      console.error('Check Bookmark Error:', e);
+    }
+  };
 
   const addToShoppingList = async (recipe: Recipe) => {
     try {
@@ -132,7 +155,7 @@ export default function AIResultScreen({ route, navigation }: Props) {
 
   const suggestRecipesDirectly = async (ingredients: string[]) => {
     try {
-      setLoading(true);
+      setIsSuggesting(true);
       setLoadingMessage('AI đang sáng tạo món ăn từ tủ lạnh của bạn...');
       
       const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`, {
@@ -141,12 +164,13 @@ export default function AIResultScreen({ route, navigation }: Props) {
       
       if (response.data && response.data.recipes) {
         setRecipes(response.data.recipes);
+        checkIfBookmarked(response.data.recipes);
       }
-      setLoading(false);
+      setIsSuggesting(false);
     } catch (error) {
       console.log('Suggest Error:', error);
       Alert.alert('Lỗi', 'Không thể lấy gợi ý món ăn.');
-      setLoading(false);
+      setIsSuggesting(false);
     }
   };
 
@@ -158,10 +182,10 @@ export default function AIResultScreen({ route, navigation }: Props) {
 
   const analyzeImage = async () => {
     try {
-      setLoading(true);
-      setLoadingMessage('AI đang phân tích ảnh và sáng tạo công thức...');
+      setIsScanning(true);
+      setLoadingMessage('Giai đoạn 1: Đang tải ảnh lên...');
       
-      const scanAndSuggestUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SCAN_AND_SUGGEST}`; 
+      const scanUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SCAN_INGREDIENTS}`; 
       
       const formData = new FormData();
       formData.append('image', {
@@ -170,24 +194,46 @@ export default function AIResultScreen({ route, navigation }: Props) {
         type: 'image/jpeg',
       } as any);
 
-      const response = await axios.post(scanAndSuggestUrl, formData, {
+      // Bước 1: Chỉ quét nguyên liệu (Nhanh)
+      const scanResponse = await axios.post(scanUrl, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+          setLoadingMessage(`Đang tải ảnh: ${percent}%`);
+        }
       });
       
-      if (response.data) {
-        if (response.data.ingredients) setDetectedIngredients(response.data.ingredients);
-        if (response.data.recipes) {
-          setRecipes(response.data.recipes);
-        }
-      } else {
-        throw new Error("Không nhận diện được dữ liệu");
-      }
+      const ingredients = scanResponse.data.ingredients || [];
+      setDetectedIngredients(ingredients);
+      setIsScanning(false); // Xong bước 1, hiện UI ngay
       
-      setLoading(false);
+      // Bước 2: Gọi AI sáng tạo công thức (Chậm hơn)
+      if (ingredients.length > 0) {
+        setIsSuggesting(true);
+        setLoadingMessage('Giai đoạn 2: Đang sáng tạo công thức...');
+        const suggestUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`;
+        
+        const suggestResponse = await axios.post(suggestUrl, {
+          ingredients: ingredients
+        });
+        
+        if (suggestResponse.data && suggestResponse.data.recipes) {
+          setRecipes(suggestResponse.data.recipes);
+          checkIfBookmarked(suggestResponse.data.recipes);
+        }
+        setIsSuggesting(false);
+      } else {
+        throw new Error("AI không tìm thấy nguyên liệu nào trong ảnh.");
+      }
     } catch (error: any) {
-      console.log('API Error:', error.message);
-      Alert.alert('Lỗi', 'Không thể kết nối với máy chủ AI hoặc ảnh không hợp lệ.');
-      setLoading(false);
+      console.error('AI Error:', error);
+      Alert.alert(
+        'Lỗi phân tích',
+        error.response?.data?.error || 'Không thể kết nối với máy chủ AI. Vui lòng thử lại.',
+        [{ text: 'Quay lại', onPress: () => navigation.goBack() }]
+      );
+      setIsScanning(false);
+      setIsSuggesting(false);
     }
   };
 
@@ -196,15 +242,56 @@ export default function AIResultScreen({ route, navigation }: Props) {
     setCheckedIngredients(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const toggleBookmark = (index: number) => {
-    setBookmarked(prev => ({ ...prev, [index]: !prev[index] }));
+  const toggleBookmark = async (index: number) => {
+    const recipe = recipes[index];
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      let currentFavorites = stored ? JSON.parse(stored) : [];
+      
+      if (!bookmarked[index]) {
+        // Add to favorites
+        // Use title as ID for now or generate one
+        const newFav = { 
+          ...recipe, 
+          id: recipe.title + index, 
+          category: 'Tất cả', // Default category
+          rating: 5.0, // Default rating
+          time: recipe.prep_time,
+          image: recipe.imageUrl
+        };
+        currentFavorites.push(newFav);
+        await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
+        showToast('Đã thêm vào mục yêu thích!');
+      } else {
+        // Remove from favorites
+        currentFavorites = currentFavorites.filter((f: any) => f.title !== recipe.title);
+        await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
+        showToast('Đã xóa khỏi mục yêu thích.');
+      }
+      setBookmarked(prev => ({ ...prev, [index]: !prev[index] }));
+    } catch (error) {
+      console.error('Bookmark Error:', error);
+      showToast('Có lỗi xảy ra khi lưu.');
+    }
   };
 
-  if (loading) {
+  if (isScanning) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, typography.body, { color: colors.textSecondary, marginTop: spacing.md }]}>{loadingMessage}</Text>
+      <View style={[styles.centerContainer, { backgroundColor: colors.background, padding: 40 }]}>
+        <View style={styles.loadingWrapper}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <View style={styles.loadingSteps}>
+            <View style={styles.loadingStepRow}>
+              <Ionicons name="cloud-upload-outline" size={20} color={loadingMessage.includes('Giai đoạn 2') ? colors.success : colors.primary} />
+              <Text style={[styles.loadingStepText, { color: loadingMessage.includes('Giai đoạn 2') ? colors.textSecondary : colors.text }]}>Tải ảnh & Nhận diện</Text>
+            </View>
+            <View style={styles.loadingStepRow}>
+              <Ionicons name="sparkles-outline" size={20} color={colors.border} />
+              <Text style={[styles.loadingStepText, { color: colors.textSecondary }]}>Sáng tạo công thức</Text>
+            </View>
+          </View>
+        </View>
+        <Text style={[styles.loadingText, typography.body, { color: colors.textSecondary, marginTop: 20 }]}>{loadingMessage}</Text>
       </View>
     );
   }
@@ -252,14 +339,23 @@ export default function AIResultScreen({ route, navigation }: Props) {
           </View>
 
           {/* Section: Gợi ý món ăn */}
-          <View style={styles.sectionHeader}>
-            <View style={[styles.iconCircle, { backgroundColor: `${colors.secondary}20` }]}>
-              <Ionicons name="restaurant" size={20} color={colors.secondary} />
+          <View style={[styles.sectionHeader, { justifyContent: 'space-between' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={[styles.iconCircle, { backgroundColor: `${colors.secondary}20` }]}>
+                <Ionicons name="restaurant" size={20} color={colors.secondary} />
+              </View>
+              <Text style={[styles.sectionTitle, typography.h2, { color: colors.text }]}>Gợi ý món ăn</Text>
             </View>
-            <Text style={[styles.sectionTitle, typography.h2, { color: colors.text }]}>Gợi ý món ăn cho bạn</Text>
+            {isSuggesting && <ActivityIndicator size="small" color={colors.primary} />}
           </View>
 
-          {recipes.map((recipe, index) => (
+          {isSuggesting && recipes.length === 0 ? (
+            <View style={[styles.recipeLoadingCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg }]}>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={[typography.body, { color: colors.textSecondary, marginLeft: 12 }]}>AI đang lên thực đơn cho bạn...</Text>
+            </View>
+          ) : (
+            recipes.map((recipe, index) => (
             <View key={index} style={[styles.recipeCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg, marginBottom: spacing.xl }]}>
               {/* 1. Compact Card: Ảnh 200px */}
               <SafeImage uri={recipe.imageUrl} style={styles.recipeImage} />
@@ -305,7 +401,8 @@ export default function AIResultScreen({ route, navigation }: Props) {
                 </TouchableOpacity>
               </View>
             </View>
-          ))}
+            ))
+          )}
         </View>
       </Animated.ScrollView>
 
@@ -689,4 +786,18 @@ const styles = StyleSheet.create({
   stepCard: { padding: 16, borderRadius: 20, marginBottom: 24, overflow: 'hidden' },
   stepHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   stepImage: { width: '100%', height: 180, borderRadius: 16, resizeMode: 'cover' },
+  loadingWrapper: { alignItems: 'center', width: '100%' },
+  loadingSteps: { marginTop: 40, width: '100%', gap: 16 },
+  loadingStepRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  loadingStepText: { fontSize: 16, fontWeight: '500' },
+  recipeLoadingCard: {
+    padding: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#CCC'
+  },
 });
