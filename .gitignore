@@ -1,0 +1,37 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/uploads/*
+backend/.env
+*.pyc
+
+# Node / Expo / Mobile
+node_modules/
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/expo-env.d.ts
+mobile/ios/
+mobile/android/
+
+# IDE / System
+.vscode/
+.idea/
+.DS_Store
+*.iml
+.gradle
+local.properties
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Secrets
+*.pem
+*.key
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+.env*.local

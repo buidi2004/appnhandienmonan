@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: app-nau-an-backend
+    env: python
+    # Vì backend nằm trong thư mục con nên ta cần build và chạy từ đó
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn --chdir backend app:app
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false # Nhập tay trên Dashboard Render
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: FLASK_ENV
+        value: production
+    autoDeploy: true
