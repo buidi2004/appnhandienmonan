@@ -319,8 +319,30 @@ export default function AIResultScreen({ route, navigation }: Props) {
             <Text style={[typography.h3, { color: colors.text, flex: 1, textAlign: 'center', marginRight: 40 }]}>{selectedRecipe?.title}</Text>
           </View>
           
-          <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 150 }}>
-            <SafeImage uri={selectedRecipe?.imageUrl} style={[styles.recipeImage, { borderRadius: borderRadius.lg, marginBottom: spacing.lg }]} />
+          <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
+            {/* 1. Header Image Gallery */}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              pagingEnabled
+              style={styles.imageGallery}
+            >
+              {[
+                selectedRecipe?.imageUrl,
+                `https://source.unsplash.com/featured/800x600?${encodeURIComponent(selectedRecipe?.title || '')},dish`,
+                `https://source.unsplash.com/featured/800x600?${encodeURIComponent(selectedRecipe?.title || '')},cooking`,
+                `https://source.unsplash.com/featured/800x600?${encodeURIComponent(selectedRecipe?.title || '')},delicious`
+              ].map((uri, idx) => (
+                <View key={idx} style={styles.galleryItem}>
+                  <SafeImage uri={uri} style={styles.galleryImage} />
+                  <View style={styles.imageBadge}>
+                    <Text style={styles.imageBadgeText}>{idx + 1}/4 Ảnh</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={{ padding: spacing.lg }}>
             
             {/* Embedded YouTube Section */}
             {!showVideo ? (
@@ -383,28 +405,31 @@ export default function AIResultScreen({ route, navigation }: Props) {
               return (
                 <TouchableOpacity 
                   key={i} 
-                  style={styles.interactiveRow} 
+                  style={[styles.ingredientCard, { backgroundColor: colors.card, borderColor: colors.border }]} 
                   onPress={() => toggleIngredient(selectedRecipe.title, i)}
                 >
-                  <Ionicons 
-                    name={isChecked ? "checkbox" : "square-outline"} 
-                    size={22} 
-                    color={isChecked ? colors.success : colors.border} 
+                  <SafeImage 
+                    uri={`https://source.unsplash.com/featured/100x100?${encodeURIComponent(ing.split(' ')[ing.split(' ').length-1])},food`} 
+                    style={styles.ingredientThumb} 
                   />
-                  {/* 3. Tương tác Checkbox: Gạch ngang và mờ chữ */}
-                  <Text style={[
-                    styles.listItemText, 
-                    typography.body, 
-                    { 
-                      color: isChecked ? colors.textSecondary : colors.text,
-                      textDecorationLine: isChecked ? 'line-through' : 'none',
-                      opacity: isChecked ? 0.5 : 1,
-                      flex: 1,
-                      marginLeft: 10
-                    }
-                  ]}>
-                    {ing}
-                  </Text>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={[
+                      styles.listItemText, 
+                      typography.body, 
+                      { 
+                        color: isChecked ? colors.textSecondary : colors.text,
+                        textDecorationLine: isChecked ? 'line-through' : 'none',
+                        opacity: isChecked ? 0.5 : 1,
+                      }
+                    ]}>
+                      {ing}
+                    </Text>
+                  </View>
+                  <Ionicons 
+                    name={isChecked ? "checkmark-circle" : "add-circle-outline"} 
+                    size={24} 
+                    color={isChecked ? colors.success : colors.primary} 
+                  />
                 </TouchableOpacity>
               );
             })}
@@ -412,11 +437,18 @@ export default function AIResultScreen({ route, navigation }: Props) {
             <Text style={[styles.subTitle, typography.h2, { color: colors.text, marginTop: spacing.xl, marginBottom: spacing.md }]}>Các bước thực hiện:</Text>
             
             {(Array.isArray(selectedRecipe?.instructions) ? selectedRecipe?.instructions : selectedRecipe?.instructions.split(/Bước \d+:/).filter(Boolean).map(s => s.trim()))?.map((inst, i) => (
-              <View key={i} style={styles.stepRow}>
-                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.stepNumberText}>{i + 1}</Text>
+              <View key={i} style={[styles.stepCard, { backgroundColor: colors.card }]}>
+                <View style={styles.stepHeaderRow}>
+                  <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.stepNumberText}>{i + 1}</Text>
+                  </View>
+                  <Text style={[typography.h3, { color: colors.text, marginLeft: 8 }]}>Bước {i + 1}</Text>
                 </View>
-                <Text style={[styles.stepText, typography.body, { color: colors.text }]}>{inst}</Text>
+                <SafeImage 
+                  uri={`https://source.unsplash.com/featured/800x450?cooking,kitchen,step,${i}`} 
+                  style={styles.stepImage} 
+                />
+                <Text style={[styles.stepText, typography.body, { color: colors.text, marginTop: 12 }]}>{inst}</Text>
               </View>
             ))}
 
@@ -429,6 +461,7 @@ export default function AIResultScreen({ route, navigation }: Props) {
                 <Text style={[typography.body, { color: colors.textSecondary, fontStyle: 'italic' }]}>{selectedRecipe.tips}</Text>
               </View>
             )}
+            </View>
           </ScrollView>
 
           {/* Sticky Bottom Bar for Start Cooking */}
@@ -634,4 +667,26 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, lineHeight: 24, fontSize: 16 },
   tipBox: { padding: 16, borderRadius: 12, borderLeftWidth: 4, borderLeftColor: '#F09035' },
   tipIconHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  imageGallery: { height: 300, marginBottom: 0 },
+  galleryItem: { width: width, height: 300 },
+  galleryImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  imageBadge: { position: 'absolute', bottom: 20, right: 20, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  imageBadgeText: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  ingredientCard: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 12, 
+    borderRadius: 16, 
+    marginBottom: 12, 
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  ingredientThumb: { width: 50, height: 50, borderRadius: 12 },
+  stepCard: { padding: 16, borderRadius: 20, marginBottom: 24, overflow: 'hidden' },
+  stepHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  stepImage: { width: '100%', height: 180, borderRadius: 16, resizeMode: 'cover' },
 });
