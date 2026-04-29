@@ -15,6 +15,14 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({
+        "message": "Chào mừng bạn đến với AI Cooking App API!",
+        "status": "online",
+        "version": "1.0.0"
+    })
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "message": "Backend đang chạy!"})

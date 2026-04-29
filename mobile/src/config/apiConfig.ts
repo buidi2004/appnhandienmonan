@@ -5,7 +5,7 @@
  */
 const API_CONFIG = {
   // Thay link này sau khi bạn deploy lên Render thành công
-  BASE_URL: 'http://192.168.1.3:5000', 
+  BASE_URL: 'https://app-nau-an-backend.onrender.com', 
   
   ENDPOINTS: {
     HEALTH: '/api/health',
