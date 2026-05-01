@@ -3,37 +3,37 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const lightColors = {
-  primary: '#2F7D57',
-  primaryDark: '#245E44',
-  secondary: '#C4513A',
+  primary: '#F09035', // Warm Orange/Yellow
+  primaryDark: '#D47D2C',
+  secondary: '#FF8C42', 
   accent: '#2E5B9A',
   warning: '#B86B00',
-  background: '#F6F7F2',
+  background: '#FDFCF0', // Creamy White
   card: '#FFFFFF',
-  cardSecondary: '#EEF1EA',
-  text: '#17231C',
-  textSecondary: '#66736B',
-  border: '#DDE4DA',
-  error: '#D64545',
-  success: '#2F9E67',
-  iconBg: '#E9EFE8',
+  cardSecondary: '#F3EFE9', // Light gray/brown for cards
+  text: '#2C2721', // Dark Brown Text
+  textSecondary: '#8B7B6B',
+  border: '#E2DCD3',
+  error: '#EF4444',
+  success: '#2ECC71',
+  iconBg: '#F3EFE9',
 };
 
 const darkColors = {
-  primary: '#6FD19D',
-  primaryDark: '#4CAC78',
-  secondary: '#F07A62',
+  primary: '#E6B971', // Yellowish Gold
+  primaryDark: '#C9A05C',
+  secondary: '#E6B971', 
   accent: '#79A7EA',
   warning: '#E2A84B',
-  background: '#0F1512',
-  card: '#171F1A',
-  cardSecondary: '#202A24',
-  text: '#F5F7F2',
-  textSecondary: '#A7B3AA',
-  border: '#2A362F',
-  error: '#FF6B6B',
-  success: '#63D494',
-  iconBg: '#1D2822',
+  background: '#13110E', // Very dark brown/black
+  card: '#1A1714', 
+  cardSecondary: '#25211B', 
+  text: '#FDFCF0', 
+  textSecondary: '#A99B8B',
+  border: '#2C2721',
+  error: '#EF4444',
+  success: '#2ECC71',
+  iconBg: '#1C1916',
 };
 
 export const typography = {
@@ -75,15 +75,15 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  sm: 6,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
   round: 9999,
 };
 
 export const theme = {
-  colors: lightColors, // Default fallback
+  colors: lightColors, 
   spacing,
   typography,
   borderRadius,
@@ -119,7 +119,6 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children 
   const systemScheme = useColorScheme();
   const [isSystem, setIsSystem] = useState(true);
   const [isDark, setIsDark] = useState(systemScheme === 'dark');
-
   const [language, setLanguageState] = useState('vi');
 
   useEffect(() => {
@@ -140,9 +139,7 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children 
           setIsSystem(true);
           setIsDark(systemScheme === 'dark');
         }
-      } catch (e) {
-        console.error('Failed to load settings', e);
-      }
+      } catch (e) {}
     };
     loadSettings();
   }, [systemScheme]);

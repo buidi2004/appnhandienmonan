@@ -11,6 +11,7 @@ export type AuthCredential = {
 
 export const auth = {
   provider: 'local',
+  currentUser: null as AuthUser | null,
 };
 
 const tokenFor = (email: string) => `local-token:${email}:${Date.now()}`;
@@ -35,7 +36,9 @@ export async function signInWithEmailAndPassword(_: typeof auth, email: string, 
   const token = tokenFor(email);
   await AsyncStorage.setItem('userEmail', email);
   await AsyncStorage.setItem('userToken', token);
-  return { user: buildUser(email, token) };
+  const user = buildUser(email, token);
+  auth.currentUser = user;
+  return { user };
 }
 
 export async function createUserWithEmailAndPassword(_: typeof auth, email: string, password: string): Promise<AuthCredential> {
@@ -53,7 +56,19 @@ export async function createUserWithEmailAndPassword(_: typeof auth, email: stri
   const token = tokenFor(email);
   await AsyncStorage.setItem('userEmail', email);
   await AsyncStorage.setItem('userToken', token);
-  return { user: buildUser(email, token) };
+  const user = buildUser(email, token);
+  auth.currentUser = user;
+  return { user };
+}
+
+export async function signInWithGoogle(): Promise<AuthCredential> {
+  const email = 'google-user@example.com';
+  const token = tokenFor(email);
+  await AsyncStorage.setItem('userEmail', email);
+  await AsyncStorage.setItem('userToken', token);
+  const user = buildUser(email, token);
+  auth.currentUser = user;
+  return { user };
 }
 
 export async function sendPasswordResetEmail(_: typeof auth, email: string): Promise<void> {
@@ -71,7 +86,9 @@ export function onAuthStateChanged(_: typeof auth, callback: (user: AuthUser | n
     if (!active) return;
     const token = pairs.find(([key]) => key === 'userToken')?.[1];
     const email = pairs.find(([key]) => key === 'userEmail')?.[1] || undefined;
-    callback(token ? buildUser(email || 'local@user.app', token) : null);
+    const user = token ? buildUser(email || 'local@user.app', token) : null;
+    auth.currentUser = user;
+    callback(user);
   });
 
   return () => {

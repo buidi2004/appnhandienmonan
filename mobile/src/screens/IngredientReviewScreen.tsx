@@ -6,6 +6,7 @@ import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AlertManager from '../components/CustomAlert';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IngredientReview'>;
 const { width } = Dimensions.get('window');
@@ -32,7 +33,13 @@ export default function IngredientReviewScreen({ route, navigation }: Props) {
   };
 
   const handleContinue = () => {
-    if (ingredients.length === 0) return;
+    if (ingredients.length === 0) {
+      AlertManager.alert(
+        'Thiếu nguyên liệu',
+        'Vui lòng chọn ít nhất một nguyên liệu để AI có thể gợi ý món ăn cho bạn.'
+      );
+      return;
+    }
     navigation.replace('AIResult', { imageUri, initialIngredients: ingredients });
   };
 

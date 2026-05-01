@@ -4,6 +4,7 @@ import axios from 'axios';
 import API_CONFIG from '../config/apiConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from './../theme/theme';
+import { auth } from '../config/firebaseConfig';
 
 // Simple in-memory cache to avoid re-fetching the same images
 const imageCache: Record<string, string> = {};
@@ -53,10 +54,16 @@ export async function fetchImageUrl(query: string, isStep: boolean = false): Pro
   }
   
   try {
+    const user = auth.currentUser;
+    const token = await user?.getIdToken();
+    
     const fullQuery = isStep ? `cách làm ${query}` : `món ăn ${query} việt nam`;
     const res = await axios.get(
       `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH_IMAGE}?q=${encodeURIComponent(fullQuery)}`,
-      { timeout: 8000 }
+      { 
+        timeout: 8000,
+        headers: { Authorization: `Bearer ${token}` }
+      }
     );
     if (res.data && res.data.url) {
       imageCache[cacheKey] = res.data.url;

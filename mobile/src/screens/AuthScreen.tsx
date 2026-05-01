@@ -8,7 +8,7 @@ import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimatedButton from '../components/AnimatedButton';
-import { auth, signInWithEmailAndPassword } from '../services/authService';
+import { auth, signInWithEmailAndPassword, signInWithGoogle } from '../services/authService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -48,10 +48,22 @@ export default function AuthScreen({ navigation }: Props) {
     Linking.openURL('tel:0901234567');
   };
 
-  const handleSocialLogin = (platform: string) => {
-    AlertManager.alert('Đăng nhập', `Đang kết nối tới ${platform}...`, [
-      { text: 'Tiếp tục', onPress: handleLogin }
-    ]);
+  const handleSocialLogin = async (platform: string) => {
+    if (platform === 'Google') {
+      try {
+        AlertManager.alert('Đăng nhập', 'Đang kết nối tới Google...');
+        const userCredential = await signInWithGoogle();
+        const token = await userCredential.user.getIdToken();
+        await AsyncStorage.setItem('userToken', token);
+        
+        AlertManager.alert('Đăng nhập thành công', `Chào mừng bạn!`);
+        navigation.replace('Terms');
+      } catch (error) {
+        AlertManager.alert('Lỗi', 'Không thể đăng nhập bằng Google');
+      }
+    } else {
+      AlertManager.alert('Thông báo', `${platform} hiện chưa khả dụng. Vui lòng dùng Google hoặc Email.`);
+    }
   };
 
   return (
@@ -221,16 +233,18 @@ const styles = StyleSheet.create({
   },
   socialRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 8,
   },
   socialIconOnlyBtn: {
-    flex: 1,
-    height: 56,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     borderWidth: 1,
-    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 4,
   },
   footer: {
     flexDirection: 'row',

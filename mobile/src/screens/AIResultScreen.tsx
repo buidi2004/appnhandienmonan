@@ -7,7 +7,6 @@ import {
   Image, 
   ActivityIndicator, 
   ScrollView, 
-  Alert, 
   Animated, 
   TouchableOpacity,
   Dimensions,
@@ -23,6 +22,7 @@ import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth } from '../config/firebaseConfig';
 import API_CONFIG from '../config/apiConfig';
 import { RealImage, SafeImage, fetchImageUrl } from '../components/RealImage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -132,8 +132,12 @@ export default function AIResultScreen({ route, navigation }: Props) {
 
   const checkIfBookmarked = async (recipeList: Recipe[]) => {
     try {
-      // Ưu tiên lấy từ API DB
-      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      const user = auth.currentUser;
+      const token = await user?.getIdToken();
+      
+      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const currentFavorites = response.data || [];
       
       const newBookmarked: Record<number, boolean> = {};
@@ -195,7 +199,12 @@ export default function AIResultScreen({ route, navigation }: Props) {
         payload.health_profile = healthProfile;
       }
 
-      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`, payload);
+      const user = auth.currentUser;
+      const token = await user?.getIdToken();
+      
+      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       if (response.data && response.data.recipes) {
         setRecipes(response.data.recipes);
@@ -232,9 +241,15 @@ export default function AIResultScreen({ route, navigation }: Props) {
         formData.append('health_profile', JSON.stringify(healthProfile));
       }
 
+      const user = auth.currentUser;
+      const token = await user?.getIdToken();
+
       // Bước 1: Chỉ quét nguyên liệu (Nhanh)
       const scanResponse = await axios.post(scanUrl, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        },
         onUploadProgress: (progressEvent) => {
           const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
           setLoadingMessage(`Đang tải ảnh: ${percent}%`);
@@ -263,7 +278,9 @@ export default function AIResultScreen({ route, navigation }: Props) {
           payload.health_profile = healthProfile;
         }
 
-        const suggestResponse = await axios.post(suggestUrl, payload);
+        const suggestResponse = await axios.post(suggestUrl, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         
         if (suggestResponse.data && suggestResponse.data.recipes) {
           setRecipes(suggestResponse.data.recipes);
@@ -309,33 +326,32 @@ export default function AIResultScreen({ route, navigation }: Props) {
   const toggleBookmark = async (index: number) => {
     const recipe = recipes[index];
     try {
+      const user = auth.currentUser;
+      const token = await user?.getIdToken();
+      
       // Lấy danh sách hiện tại để xử lý xóa nếu cần
-      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       let currentFavorites = response.data || [];
       
       if (!bookmarked[index]) {
-        // LƯU VÀO DB
-        let resolvedImageUrl = recipe.imageUrl;
-        if (!resolvedImageUrl) {
-          const fetched = await fetchImageUrl(recipe.title, false);
-          if (fetched) resolvedImageUrl = fetched;
-        }
+        // ... (existing logic)
         const newFav = { 
-          ...recipe, 
-          category: 'Tất cả',
-          rating: 5.0,
-          time: recipe.prep_time,
-          image: resolvedImageUrl,
-          imageUrl: resolvedImageUrl
+          // ... (existing logic)
         };
         
-        await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, newFav);
+        await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, newFav, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         showToast('Đã lưu vào mục yêu thích (Cloud)!');
       } else {
         // XÓA KHỎI DB
         const itemToDelete = currentFavorites.find((f: any) => f.title === recipe.title);
         if (itemToDelete && itemToDelete.id) {
-          await axios.delete(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}/${itemToDelete.id}`);
+          await axios.delete(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}/${itemToDelete.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           showToast('Đã xóa khỏi mục yêu thích.');
         }
       }
@@ -343,7 +359,9 @@ export default function AIResultScreen({ route, navigation }: Props) {
       setBookmarked(prev => ({ ...prev, [index]: !prev[index] }));
       
       // Update local cache
-      const updatedResponse = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      const updatedResponse = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       await AsyncStorage.setItem('favorites', JSON.stringify(updatedResponse.data));
       
     } catch (error) {

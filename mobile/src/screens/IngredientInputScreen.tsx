@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedButton from '../components/AnimatedButton';
+import AlertManager from '../components/CustomAlert';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IngredientInput'>;
 const { width } = Dimensions.get('window');
@@ -86,7 +87,13 @@ export default function IngredientInputScreen({ navigation }: Props) {
   };
 
   const handleSearch = () => {
-    if (selected.length === 0) return;
+    if (selected.length === 0) {
+      AlertManager.alert(
+        'Chưa chọn nguyên liệu',
+        'Vui lòng chọn ít nhất một nguyên liệu để bắt đầu tìm kiếm công thức.'
+      );
+      return;
+    }
     saveRecent(selected);
     navigation.navigate('AIResult', { initialIngredients: selected });
   };

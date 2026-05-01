@@ -23,6 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RealImage } from '../components/RealImage';
 import API_CONFIG from '../config/apiConfig';
 import axios from 'axios';
+import { auth } from '../config/firebaseConfig';
 
 type Props = BottomTabScreenProps<TabParamList, 'Favorites'>;
 
@@ -52,6 +53,9 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       loadFavorites();
+      return () => {
+        if (undoTimer.current) clearTimeout(undoTimer.current);
+      };
     }, [])
   );
 
@@ -62,8 +66,13 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
   const loadFavorites = async () => {
     try {
       setLoading(true);
+      const user = auth.currentUser;
+      const token = await user?.getIdToken();
+      
       // Gọi API lấy từ DB thay vì AsyncStorage
-      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.data) {
         setFavorites(response.data);
       }
@@ -103,7 +112,11 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
       
       // Gọi API xóa trong DB
       if (item.id) {
-        await axios.delete(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}/${item.id}`);
+        const user = auth.currentUser;
+        const token = await user?.getIdToken();
+        await axios.delete(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}/${item.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
       }
       
       // Đồng bộ lại local (tùy chọn)
@@ -126,9 +139,11 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
 
   const triggerSnackbar = () => {
     setShowSnackbar(true);
+    snackbarAnim.setValue(100);
     Animated.spring(snackbarAnim, {
       toValue: 0,
       useNativeDriver: true,
+      friction: 8,
     }).start();
 
     if (undoTimer.current) clearTimeout(undoTimer.current);
@@ -286,22 +301,24 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
         )}
       />
 
-      <Animated.View style={[
-        styles.snackbar, 
-        { 
-          backgroundColor: colors.text,
-          transform: [{ translateY: snackbarAnim }]
-        }
-      ]}>
-        <Text style={[typography.body, { color: colors.background, flex: 1 }]}>
-          Đã xóa khỏi mục yêu thích
-        </Text>
-        <TouchableOpacity activeOpacity={0.7} onPress={undoRemove}>
-          <Text style={[typography.body, { color: colors.primary, fontWeight: 'bold' }]}>
-            HOÀN TÁC
+      {showSnackbar && (
+        <Animated.View style={[
+          styles.snackbar, 
+          { 
+            backgroundColor: colors.text,
+            transform: [{ translateY: snackbarAnim }]
+          }
+        ]}>
+          <Text style={[typography.body, { color: colors.background, flex: 1 }]}>
+            Đã xóa khỏi mục yêu thích
           </Text>
-        </TouchableOpacity>
-      </Animated.View>
+          <TouchableOpacity activeOpacity={0.7} onPress={undoRemove}>
+            <Text style={[typography.body, { color: colors.primary, fontWeight: 'bold' }]}>
+              HOÀN TÁC
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
     </View>
   );
 }

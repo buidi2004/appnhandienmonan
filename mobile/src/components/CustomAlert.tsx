@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/theme';
 
@@ -28,14 +28,16 @@ class AlertManager {
     if (this.listeners.length > 0) {
       let type: 'success' | 'error' | 'warning' | 'info' = 'info';
       const lowerTitle = title.toLowerCase();
-      if (lowerTitle.includes('lỗi') || lowerTitle.includes('thất bại')) type = 'error';
-      else if (lowerTitle.includes('thành công') || lowerTitle.includes('hoàn thành') || lowerTitle.includes('chúc mừng') || lowerTitle.includes('lên cấp')) type = 'success';
-      else if (lowerTitle.includes('cảnh báo') || lowerTitle.includes('xóa')) type = 'warning';
+      const lowerMsg = message.toLowerCase();
+      
+      if (lowerTitle.includes('lỗi') || lowerTitle.includes('thất bại') || lowerMsg.includes('sai') || lowerMsg.includes('vui lòng')) type = 'error';
+      else if (lowerTitle.includes('thành công') || lowerTitle.includes('hoàn thành') || lowerTitle.includes('chào mừng')) type = 'success';
+      else if (lowerTitle.includes('cảnh báo') || lowerTitle.includes('xác nhận')) type = 'warning';
       
       const topListener = this.listeners[this.listeners.length - 1];
       topListener({ title, message, buttons, type });
     } else {
-      // Fallback in case component is not mounted
+      // Fallback
       import('react-native').then(({ Alert }) => {
         Alert.alert(title, message, buttons);
       });
@@ -57,12 +59,13 @@ export const CustomAlert = () => {
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
-          friction: 6,
+          friction: 7,
+          tension: 40,
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 200,
+          duration: 300,
           useNativeDriver: true,
         })
       ]).start();
@@ -79,12 +82,12 @@ export const CustomAlert = () => {
     Animated.parallel([
       Animated.timing(scaleAnim, {
         toValue: 0.8,
-        duration: 150,
+        duration: 200,
         useNativeDriver: true,
       }),
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 150,
+        duration: 200,
         useNativeDriver: true,
       })
     ]).start(() => {
@@ -100,19 +103,23 @@ export const CustomAlert = () => {
 
   let iconName = 'information-circle';
   let iconColor = colors.primary;
+  let bgIcon = `${colors.primary}15`;
   
   if (type === 'success') {
     iconName = 'checkmark-circle';
-    iconColor = colors.success || '#34C759';
+    iconColor = colors.success || '#2ECC71';
+    bgIcon = '#E8F5E9';
   } else if (type === 'error') {
     iconName = 'close-circle';
-    iconColor = colors.error || '#FF3B30';
+    iconColor = colors.error || '#EF4444';
+    bgIcon = '#FFEBEE';
   } else if (type === 'warning') {
-    iconName = 'warning';
-    iconColor = '#FF9500';
+    iconName = 'alert-circle';
+    iconColor = '#F59E0B';
+    bgIcon = '#FFF3E0';
   }
 
-  const defaultButtons: AlertButton[] = [{ text: 'OK', onPress: () => {} }];
+  const defaultButtons: AlertButton[] = [{ text: 'Đã hiểu', onPress: () => {} }];
   const activeButtons = buttons && buttons.length > 0 ? buttons : defaultButtons;
 
   return (
@@ -124,43 +131,49 @@ export const CustomAlert = () => {
             styles.alertBox, 
             { 
               backgroundColor: colors.card,
-              borderRadius: borderRadius.xl,
+              borderRadius: 30,
               transform: [{ scale: scaleAnim }],
               opacity: fadeAnim
             }
           ]}
         >
-          <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
-            <Ionicons name={iconName as any} size={40} color={iconColor} />
+          <View style={[styles.iconWrapper, { backgroundColor: bgIcon }]}>
+             <Ionicons name={iconName as any} size={50} color={iconColor} />
           </View>
           
-          <Text style={[typography.h2, styles.title, { color: colors.text }]}>{title}</Text>
-          <Text style={[typography.body, styles.message, { color: colors.textSecondary }]}>{message}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
           
-          <View style={styles.buttonContainer}>
-            {activeButtons.map((btn, index) => (
-              <TouchableOpacity 
-                key={index}
-                activeOpacity={0.8}
-                style={[
-                  styles.button, 
-                  { 
-                    backgroundColor: btn.style === 'destructive' ? colors.error : (btn.style === 'cancel' ? colors.border : colors.primary),
-                    flex: activeButtons.length > 1 ? 1 : undefined,
-                    width: activeButtons.length === 1 ? '100%' : undefined,
-                    marginLeft: index > 0 ? 12 : 0
-                  }
-                ]}
-                onPress={() => close(btn.onPress)}
-              >
-                <Text style={[
-                  typography.h3, 
-                  { color: btn.style === 'cancel' ? colors.text : '#FFF' }
-                ]}>
-                  {btn.text}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={[styles.buttonRow, { flexDirection: activeButtons.length > 2 ? 'column' : 'row' }]}>
+            {activeButtons.map((btn, index) => {
+              const isCancel = btn.style === 'cancel';
+              const isDestructive = btn.style === 'destructive';
+              
+              return (
+                <TouchableOpacity 
+                  key={index}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.button, 
+                    { 
+                      backgroundColor: isCancel ? colors.cardSecondary : (isDestructive ? colors.error : colors.primary),
+                      flex: activeButtons.length <= 2 ? 1 : 0,
+                      marginTop: activeButtons.length > 2 && index > 0 ? 10 : 0,
+                      marginLeft: activeButtons.length <= 2 && index > 0 ? 10 : 0,
+                      borderRadius: 18,
+                    }
+                  ]}
+                  onPress={() => close(btn.onPress)}
+                >
+                  <Text style={[
+                    styles.buttonText, 
+                    { color: isCancel ? colors.text : '#FFF' }
+                  ]}>
+                    {btn.text}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </Animated.View>
       </View>
@@ -173,50 +186,55 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 9999,
+    padding: 24,
   },
   overlayBg: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   alertBox: {
-    width: '85%',
-    maxWidth: 340,
+    width: '100%',
+    maxWidth: 320,
     padding: 24,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 10,
   },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  iconWrapper: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
   title: {
+    fontSize: 22,
+    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   message: {
+    fontSize: 15,
     textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: 30,
     lineHeight: 22,
   },
-  buttonContainer: {
-    flexDirection: 'row',
+  buttonRow: {
     width: '100%',
-    justifyContent: 'space-between',
   },
   button: {
-    paddingVertical: 14,
-    borderRadius: 14,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   }
 });
 

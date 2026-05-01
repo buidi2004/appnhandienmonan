@@ -6,7 +6,7 @@ import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera } from 'expo-camera';
-import { auth, onAuthStateChanged } from '../services/authService';
+import { auth, onAuthStateChanged } from '../config/firebaseConfig';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
@@ -18,7 +18,7 @@ export default function SplashScreen({ navigation }: Props) {
   const textOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Start animation using built-in Animated
+    // Start animation
     Animated.spring(scale, {
       toValue: 1,
       friction: 6,
@@ -41,12 +41,11 @@ export default function SplashScreen({ navigation }: Props) {
 
     const checkStatus = async () => {
       try {
-        // Giả lập thời gian loading tối thiểu để xem animation (1.5 - 2s)
+        // Chờ ít nhất 2s để người dùng thấy animation logo
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const hasAcceptedTerms = await AsyncStorage.getItem('hasAcceptedTerms');
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-        const userToken = await AsyncStorage.getItem('userToken');
         
         if (!hasAcceptedTerms) {
           navigation.replace('Terms');
@@ -58,15 +57,21 @@ export default function SplashScreen({ navigation }: Props) {
           return;
         }
 
-        // Kiểm tra Firebase Auth state thay vì chỉ check AsyncStorage
+        // Kiểm tra Firebase Auth thật
+        // Timeout 5s nếu Firebase không phản hồi
+        const timeout = setTimeout(() => {
+          unsubscribe();
+          navigation.replace('Auth');
+        }, 5000);
+
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          unsubscribe(); // Chỉ cần chạy 1 lần khi load Splash
+          clearTimeout(timeout);
+          unsubscribe();
+          
           if (user) {
-            // Lấy token mới nhất để lưu lại (refresh token nếu cần)
             const token = await user.getIdToken();
             await AsyncStorage.setItem('userToken', token);
             
-            // Kiểm tra quyền
             const { status } = await Camera.getCameraPermissionsAsync();
             if (status === 'granted') {
               navigation.replace('MainTabs');
@@ -74,14 +79,11 @@ export default function SplashScreen({ navigation }: Props) {
               navigation.replace('Permission');
             }
           } else {
-            // Không có user đăng nhập
             await AsyncStorage.removeItem('userToken');
             navigation.replace('Auth');
           }
         });
-        
       } catch (e) {
-        // Lỗi đọc storage thì đưa về Auth
         navigation.replace('Auth');
       }
     };

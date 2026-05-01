@@ -1,7 +1,7 @@
 import AlertManager, { CustomAlert } from '../components/CustomAlert';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Alert,
+  View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Modal, Animated, Dimensions, Vibration,
   PanResponder, Linking, Image
 } from 'react-native';

@@ -6,6 +6,7 @@ import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AlertManager from '../components/CustomAlert';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PrepChecklist'>;
 const { width } = Dimensions.get('window');
@@ -92,11 +93,29 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
   ], [checklist]);
 
   const handleStart = () => {
-    navigation.replace('CookingMode', { steps, dishName, ingredients, tips });
+    if (!isReady) {
+      AlertManager.alert(
+        'Bạn đã sẵn sàng?',
+        'Có vẻ bạn chưa chuẩn bị xong các bước sơ chế quan trọng. Bạn vẫn muốn bắt đầu nấu chứ?',
+        [
+          { text: 'Kiểm tra lại', style: 'cancel' },
+          { text: 'Bắt đầu luôn', onPress: () => navigation.replace('CookingMode', { steps, dishName, ingredients, tips }) }
+        ]
+      );
+    } else {
+      navigation.replace('CookingMode', { steps, dishName, ingredients, tips });
+    }
   };
 
   const handleSkip = () => {
-    navigation.replace('CookingMode', { steps, dishName, ingredients, tips });
+    AlertManager.alert(
+      'Bỏ qua chuẩn bị?',
+      'Bạn nên kiểm tra dụng cụ và sơ chế trước để việc nấu nướng suôn sẻ hơn.',
+      [
+        { text: 'Quay lại', style: 'cancel' },
+        { text: 'Bỏ qua', style: 'destructive', onPress: () => navigation.replace('CookingMode', { steps, dishName, ingredients, tips }) }
+      ]
+    );
   };
 
   return (

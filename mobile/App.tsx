@@ -7,19 +7,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { LogBox, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const styles = StyleSheet.create({
-  fabShadow: {
-    shadowColor: '#F09035',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 10,
-  }
-});
-
-// Ẩn cảnh báo về Push Notifications trên Expo Go SDK 53 (đây là cảnh báo hệ thống, không phải lỗi code)
-LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
 import AuthScreen from './src/screens/AuthScreen';
@@ -52,10 +41,21 @@ import IngredientInputScreen from './src/screens/IngredientInputScreen';
 import IngredientReviewScreen from './src/screens/IngredientReviewScreen';
 import PrepChecklistScreen from './src/screens/PrepChecklistScreen';
 
-import { ThemeProvider, useAppTheme, typography } from './src/theme/theme';
+import { ThemeProvider, useAppTheme } from './src/theme/theme';
 import { requestNotificationPermissions, scheduleDailyNotifications } from './src/services/notificationService';
-import AlertManager, { CustomAlert } from './src/components/CustomAlert';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CustomAlert } from './src/components/CustomAlert';
+
+const styles = StyleSheet.create({
+  fabShadow: {
+    shadowColor: '#F09035',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 10,
+  }
+});
+
+LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -99,7 +99,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function TabNavigator() {
-  const { colors, isDark } = useAppTheme();
+  const { colors } = useAppTheme();
 
   return (
     <Tab.Navigator
@@ -153,58 +153,11 @@ function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ title: 'Trang chủ', headerShown: false }} 
-      />
-      <Tab.Screen 
-        name="Favorites" 
-        component={FavoritesScreen} 
-        options={{ title: 'Yêu thích', headerShown: false }}
-      />
-      <Tab.Screen 
-        name="Camera" 
-        component={CameraScreen} 
-        options={{ 
-          title: 'Quét',
-          tabBarStyle: { display: 'none' },
-          tabBarIcon: () => null,
-          tabBarButton: (props: any) => (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={props.onPress}
-              style={{
-                top: -15,
-                justifyContent: 'center',
-                alignItems: 'center',
-                ...styles.fabShadow
-              }}
-            >
-              <View style={{
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                backgroundColor: colors.primary,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <Ionicons name="camera" size={28} color="#FFF" />
-              </View>
-            </TouchableOpacity>
-          )
-        }}
-      />
-      <Tab.Screen 
-        name="Community" 
-        component={CommunityScreen} 
-        options={{ title: 'Cộng đồng', headerShown: false }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
-        options={{ title: 'Cá nhân', headerShown: false }}
-      />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Trang chủ', headerShown: false }} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Yêu thích', headerShown: false }} />
+      <Tab.Screen name="Camera" component={CameraScreen} options={{ title: 'Máy quét' }} />
+      <Tab.Screen name="Community" component={CommunityScreen} options={{ title: 'Cộng đồng', headerShown: false }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Cá nhân', headerShown: false }} />
     </Tab.Navigator>
   );
 }
@@ -224,7 +177,7 @@ function MainApp() {
       const hasPermission = await requestNotificationPermissions();
       if (hasPermission) {
         const isEnabled = await AsyncStorage.getItem('notificationsEnabled');
-        if (isEnabled !== 'false') { // Mặc định là true nếu chưa set
+        if (isEnabled !== 'false') {
           await scheduleDailyNotifications();
         }
       }
@@ -232,9 +185,7 @@ function MainApp() {
     setupNotifications();
   }, []);
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
   return (
     <SafeAreaProvider>
@@ -257,11 +208,7 @@ function MainApp() {
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="Permission" component={PermissionScreen} />
           <Stack.Screen name="MainTabs" component={TabNavigator} />
-          <Stack.Screen 
-            name="AIResult" 
-            component={AIResultScreen} 
-            options={{ headerShown: false }} 
-          />
+          <Stack.Screen name="AIResult" component={AIResultScreen} options={{ headerShown: false }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: true, title: 'Chỉnh sửa hồ sơ', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: true, title: 'Cài đặt chung', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Thông báo', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
