@@ -18,6 +18,13 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+print("=" * 50)
+print(f"[STARTUP] AI Cooking App Backend starting...")
+print(f"[STARTUP] Environment: {os.getenv('FLASK_ENV', 'development')}")
+print(f"[STARTUP] Port: {os.getenv('PORT', '5000')}")
+print(f"[STARTUP] Python Version: {os.getenv('PYTHON_VERSION', 'Unknown')}")
+print("=" * 50)
+
 # --- KHỞI TẠO FIREBASE ---
 try:
     # Ưu tiên đọc cấu hình từ biến môi trường (Cho Render)

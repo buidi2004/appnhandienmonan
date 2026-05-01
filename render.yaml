@@ -4,7 +4,7 @@ services:
     env: python
     # Vì backend nằm trong thư mục con nên ta cần build và chạy từ đó
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: gunicorn --chdir backend app:app
+    startCommand: gunicorn --chdir backend --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 app:app
     envVars:
       - key: GEMINI_API_KEY
         sync: false # Nhập tay trên Dashboard Render

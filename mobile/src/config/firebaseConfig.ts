@@ -1,1 +1,1 @@
-export { auth } from '../services/authService';
+export { auth, onAuthStateChanged } from '../services/authService';
