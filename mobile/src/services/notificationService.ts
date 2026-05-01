@@ -31,29 +31,29 @@ export async function scheduleDailyNotifications() {
   const scenarios = [
     {
       id: 'morning',
-      title: 'Chào buổi sáng Dĩ! 👋',
-      body: 'Còn 15 phút trước khi bắt đầu ngày mới? Quét tủ lạnh để AI gợi ý bữa sáng cấp tốc nhé!',
+      title: 'Bữa sáng từ tủ bếp',
+      body: 'Quét nhanh nguyên liệu đang có để chọn một món gọn trong 15 phút.',
       hour: 7,
       minute: 0,
     },
     {
       id: 'lunch',
-      title: 'Dĩ ăn trưa chưa? 🍱',
-      body: 'Đang có 5 công thức Bento văn phòng cực dễ làm chờ bạn khám phá.',
+      title: 'Đến giờ dựng bữa trưa',
+      body: 'Chọn món no lâu, dễ chuẩn bị và hợp nguyên liệu còn lại trong bếp.',
       hour: 11,
       minute: 0,
     },
     {
       id: 'dinner',
-      title: 'Trời Cao Lãnh đang se lạnh... 🍲',
-      body: 'Làm nồi lẩu Thái chua cay thì tuyệt vời Dĩ ơi! Xem công thức ngay.',
+      title: 'Bữa tối nên nấu gì?',
+      body: 'Mở tủ bếp hôm nay để xem món nào dùng được nhiều nguyên liệu nhất.',
       hour: 17,
       minute: 30,
     },
     {
       id: 'late_night',
-      title: 'Đang code muộn mà buồn miệng? 🍏',
-      body: 'Gợi ý ngay 3 món snack healthy ăn đêm không lo tăng cân.',
+      title: 'Ăn nhẹ cuối ngày',
+      body: 'Ưu tiên món nhẹ bụng, ít thao tác và không làm bếp bừa thêm.',
       hour: 22,
       minute: 0,
     },
@@ -74,14 +74,4 @@ export async function scheduleDailyNotifications() {
       },
     });
   }
-}
-
-export async function sendTestNotification() {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Thông báo thử nghiệm 🚀',
-      body: 'Hệ thống thông báo thông minh đã được thiết lập thành công!',
-    },
-    trigger: null, // Gửi ngay lập tức
-  });
 }

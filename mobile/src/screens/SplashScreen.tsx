@@ -6,6 +6,7 @@ import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera } from 'expo-camera';
+import { auth, onAuthStateChanged } from '../services/authService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
@@ -57,18 +58,28 @@ export default function SplashScreen({ navigation }: Props) {
           return;
         }
 
-        if (userToken) {
-          // Kiểm tra quyền
-          const { status } = await Camera.getCameraPermissionsAsync();
-          if (status === 'granted') {
-            navigation.replace('MainTabs');
+        // Kiểm tra Firebase Auth state thay vì chỉ check AsyncStorage
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          unsubscribe(); // Chỉ cần chạy 1 lần khi load Splash
+          if (user) {
+            // Lấy token mới nhất để lưu lại (refresh token nếu cần)
+            const token = await user.getIdToken();
+            await AsyncStorage.setItem('userToken', token);
+            
+            // Kiểm tra quyền
+            const { status } = await Camera.getCameraPermissionsAsync();
+            if (status === 'granted') {
+              navigation.replace('MainTabs');
+            } else {
+              navigation.replace('Permission');
+            }
           } else {
-            navigation.replace('Permission');
+            // Không có user đăng nhập
+            await AsyncStorage.removeItem('userToken');
+            navigation.replace('Auth');
           }
-        } else {
-          // Không có token
-          navigation.replace('Auth');
-        }
+        });
+        
       } catch (e) {
         // Lỗi đọc storage thì đưa về Auth
         navigation.replace('Auth');

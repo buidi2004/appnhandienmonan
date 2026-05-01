@@ -1,145 +1,208 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
+import AlertManager from '../components/CustomAlert';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
 
 const initialNotifications = [
   { id: '1', title: 'Công thức mới cho bạn!', body: 'Khám phá cách làm Bún đậu mắm tôm chuẩn vị.', time: '2 giờ trước', type: 'recipe', unread: true },
-  { id: '2', title: 'Ưu đãi Premium', body: 'Giảm giá 50% khi nâng cấp gói Pro ngay hôm nay.', time: '5 giờ trước', type: 'promo', unread: true },
+  { id: '2', title: 'Tính năng mới', body: 'AI giờ đây có thể gợi ý thực đơn dựa trên sức khỏe của bạn.', time: '5 giờ trước', type: 'system', unread: true },
   { id: '3', title: 'Nguyên liệu sạch', body: 'Hệ thống AI vừa cập nhật thêm 100 loại rau củ mới.', time: 'Hôm qua', type: 'system', unread: false },
-  { id: '4', title: 'Gợi ý bữa tối', body: 'Trời Cao Lãnh đang se lạnh, làm nồi lẩu Thái nhé!', time: 'Hôm qua', type: 'recipe', unread: false },
+  { id: '4', title: 'Gợi ý bữa tối', body: 'Trời se lạnh, làm nồi lẩu Thái nhé!', time: 'Hôm qua', type: 'recipe', unread: false },
 ];
 
 export default function NotificationsScreen({ navigation }: Props) {
   const { colors, typography, spacing, borderRadius } = useAppTheme();
   const [notifications, setNotifications] = useState(initialNotifications);
 
+  const unreadCount = notifications.filter(n => n.unread).length;
+
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+    if (unreadCount === 0) return;
+    AlertManager.alert(
+      'Đánh dấu tất cả',
+      `Đánh dấu ${unreadCount} thông báo là đã đọc?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đồng ý', onPress: () => setNotifications(notifications.map(n => ({ ...n, unread: false }))) }
+      ]
+    );
   };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      activeOpacity={0.7}
-      style={[
-        styles.notificationItem, 
-        { 
-          backgroundColor: item.unread ? '#FFF4E6' : colors.card, 
-          borderRadius: borderRadius.lg, 
-          marginBottom: spacing.sm,
-          borderWidth: item.unread ? 1 : 0,
-          borderColor: '#FFD1A4'
-        }
-      ]}
-      onPress={() => {
-        setNotifications(notifications.map(n => n.id === item.id ? { ...n, unread: false } : n));
-      }}
-    >
-      <View style={[styles.iconContainer, { backgroundColor: item.type === 'recipe' ? '#FF950020' : '#007AFF20' }]}>
-        <Ionicons 
-          name={item.type === 'recipe' ? 'restaurant' : 'notifications'} 
-          size={20} 
-          color={item.type === 'recipe' ? '#FF9500' : '#007AFF'} 
-        />
-      </View>
-      <View style={styles.content}>
-        <Text style={[typography.body, { color: item.unread ? colors.text : colors.textSecondary, fontWeight: item.unread ? 'bold' : '500' }]}>
-          {item.title}
-        </Text>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={2}>
-          {item.body}
-        </Text>
-        <Text style={[typography.caption, { color: colors.textSecondary, fontSize: 10, marginTop: 6, fontWeight: 'bold' }]}>
-          {item.time}
-        </Text>
-      </View>
-      {item.unread && <View style={styles.unreadDot} />}
-    </TouchableOpacity>
-  );
+  const clearAll = () => {
+    AlertManager.alert(
+      'Xóa tất cả',
+      'Bạn có chắc chắn muốn xóa toàn bộ thông báo?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Xóa', style: 'destructive', onPress: () => setNotifications([]) }
+      ]
+    );
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+  };
 
   const sections = [
     { title: 'MỚI NHẤT', data: notifications.filter(n => n.time.includes('giờ')) },
     { title: 'TRƯỚC ĐÓ', data: notifications.filter(n => !n.time.includes('giờ')) },
   ];
 
+  const getTypeConfig = (type: string) => {
+    if (type === 'recipe') return { icon: 'restaurant' as const, color: '#FF9500', bg: '#FF950012' };
+    return { icon: 'megaphone' as const, color: '#007AFF', bg: '#007AFF12' };
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header with back button */}
       <View style={styles.header}>
-        <Text style={[typography.h1, { color: colors.text }]}>Thông báo</Text>
-        <TouchableOpacity onPress={markAllAsRead}>
-          <Text style={[typography.body, { color: colors.primary, fontWeight: 'bold' }]}>Đọc tất cả</Text>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
+        <View style={{ flex: 1 }} />
+        {notifications.length > 0 && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {unreadCount > 0 && (
+              <TouchableOpacity activeOpacity={0.7} onPress={markAllAsRead} style={[styles.headerAction, { backgroundColor: colors.card }]}>
+                <Ionicons name="checkmark-done" size={18} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity activeOpacity={0.7} onPress={clearAll} style={[styles.headerAction, { backgroundColor: colors.card }]}>
+              <Ionicons name="trash-outline" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.lg }}>
-        {sections.map((section, idx) => section.data.length > 0 && (
-          <View key={idx} style={{ marginBottom: spacing.xl }}>
-            <Text style={[styles.sectionTitle, typography.caption, { color: colors.textSecondary }]}>
-              {section.title}
-            </Text>
-            {section.data.map(item => (
-              <React.Fragment key={item.id}>
-                {renderItem({ item })}
-              </React.Fragment>
-            ))}
+      {/* Title */}
+      <View style={styles.titleRow}>
+        <Text style={[styles.screenTitle, { color: colors.text }]}>Thông báo</Text>
+        {unreadCount > 0 && (
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
           </View>
-        ))}
-      </ScrollView>
+        )}
+      </View>
+
+      {/* Empty State */}
+      {notifications.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: `${colors.primary}08` }]}>
+            <Ionicons name="notifications-off-outline" size={48} color={`${colors.textSecondary}40`} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Không có thông báo</Text>
+          <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+            Các gợi ý món ăn và cập nhật mới sẽ xuất hiện tại đây
+          </Text>
+        </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {sections.map((section, idx) => section.data.length > 0 && (
+            <View key={idx} style={{ marginBottom: 24 }}>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                {section.title}
+              </Text>
+              {section.data.map(item => {
+                const config = getTypeConfig(item.type);
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.7}
+                    style={[
+                      styles.notifCard,
+                      { 
+                        backgroundColor: item.unread ? `${colors.primary}06` : colors.card,
+                        borderLeftWidth: item.unread ? 3 : 0,
+                        borderLeftColor: colors.primary,
+                      }
+                    ]}
+                    onPress={() => {
+                      setNotifications(notifications.map(n => n.id === item.id ? { ...n, unread: false } : n));
+                    }}
+                    onLongPress={() => {
+                      AlertManager.alert(
+                        'Xóa thông báo',
+                        `Xóa "${item.title}"?`,
+                        [
+                          { text: 'Hủy', style: 'cancel' },
+                          { text: 'Xóa', style: 'destructive', onPress: () => removeNotification(item.id) }
+                        ]
+                      );
+                    }}
+                  >
+                    <View style={[styles.notifIcon, { backgroundColor: config.bg }]}>
+                      <Ionicons name={config.icon} size={20} color={config.color} />
+                    </View>
+                    <View style={styles.notifContent}>
+                      <Text style={[styles.notifTitle, { color: colors.text, fontWeight: item.unread ? '700' : '500' }]}>
+                        {item.title}
+                      </Text>
+                      <Text style={[styles.notifBody, { color: colors.textSecondary }]} numberOfLines={2}>
+                        {item.body}
+                      </Text>
+                      <Text style={[styles.notifTime, { color: `${colors.textSecondary}80` }]}>
+                        {item.time}
+                      </Text>
+                    </View>
+                    {item.unread && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+          <Text style={[styles.footerNote, { color: `${colors.textSecondary}60` }]}>
+            Nhấn giữ để xóa thông báo
+          </Text>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  header: { 
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+  backBtn: { 
+    width: 40, height: 40, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
   },
+  headerAction: { 
+    width: 40, height: 40, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginTop: 16, marginBottom: 20 },
+  screenTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+  unreadBadge: { 
+    backgroundColor: '#FF3B30', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12, marginLeft: 12,
+  },
+  unreadBadgeText: { color: '#FFF', fontSize: 13, fontWeight: '800' },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   sectionTitle: {
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: 12,
-    marginLeft: 4,
+    fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 12, marginLeft: 2,
   },
-  notificationItem: {
-    flexDirection: 'row',
-    padding: 16,
-    alignItems: 'center',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+  notifCard: {
+    flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 8,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  notifIcon: {
+    width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
-  content: {
-    flex: 1,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF3B30',
-    position: 'absolute',
-    top: 16,
-    right: 16,
-  },
+  notifContent: { flex: 1 },
+  notifTitle: { fontSize: 15 },
+  notifBody: { fontSize: 13, marginTop: 3, lineHeight: 19 },
+  notifTime: { fontSize: 11, marginTop: 6, fontWeight: '600' },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, marginLeft: 8 },
+  
+  // Empty state
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  emptyIcon: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  emptyDesc: { fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  footerNote: { textAlign: 'center', fontSize: 12, marginTop: 8, marginBottom: 20 },
 });

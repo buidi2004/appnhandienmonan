@@ -20,6 +20,9 @@ import { TabParamList, RootStackParamList } from '../../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RealImage } from '../components/RealImage';
+import API_CONFIG from '../config/apiConfig';
+import axios from 'axios';
 
 type Props = BottomTabScreenProps<TabParamList, 'Favorites'>;
 
@@ -59,14 +62,16 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
   const loadFavorites = async () => {
     try {
       setLoading(true);
-      const stored = await AsyncStorage.getItem('favorites');
-      if (stored) {
-        setFavorites(JSON.parse(stored));
-      } else {
-        setFavorites([]);
+      // Gọi API lấy từ DB thay vì AsyncStorage
+      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      if (response.data) {
+        setFavorites(response.data);
       }
     } catch (e) {
-      console.error('Failed to load favorites', e);
+      console.error('Failed to load favorites from DB', e);
+      // Fallback về AsyncStorage nếu API lỗi (tùy chọn)
+      const stored = await AsyncStorage.getItem('favorites');
+      if (stored) setFavorites(JSON.parse(stored));
     } finally {
       setLoading(false);
     }
@@ -90,11 +95,24 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
   };
 
   const removeFavorite = async (item: any) => {
-    const updated = favorites.filter(f => (f.id || f.title) !== (item.id || item.title));
-    setLastRemovedItem(item);
-    setFavorites(updated);
-    await AsyncStorage.setItem('favorites', JSON.stringify(updated));
-    triggerSnackbar();
+    try {
+      const originalFavorites = [...favorites];
+      const updated = favorites.filter(f => (f.id || f.title) !== (item.id || item.title));
+      setLastRemovedItem(item);
+      setFavorites(updated);
+      
+      // Gọi API xóa trong DB
+      if (item.id) {
+        await axios.delete(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}/${item.id}`);
+      }
+      
+      // Đồng bộ lại local (tùy chọn)
+      await AsyncStorage.setItem('favorites', JSON.stringify(updated));
+      triggerSnackbar();
+    } catch (e) {
+      console.error('Lỗi khi xóa món ăn:', e);
+      // Bạn có thể hoàn tác UI ở đây nếu cần
+    }
   };
 
   const undoRemove = async () => {
@@ -148,12 +166,12 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => setSearchQuery('')}>
               <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity style={[styles.filterBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.round }]}>
+        <TouchableOpacity activeOpacity={0.7} style={[styles.filterBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.round }]}>
           <Ionicons name="options-outline" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
@@ -168,6 +186,7 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
           const isActive = activeCategory === cat;
           return (
             <TouchableOpacity 
+              activeOpacity={0.7}
               key={idx}
               onPress={() => setActiveCategory(cat)}
               style={[
@@ -221,12 +240,14 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
         }
         renderItem={({ item }) => (
           <TouchableOpacity 
+            activeOpacity={0.7}
             onPress={() => navigation.navigate('AIResult', { initialRecipe: item, imageUri: item.image || item.imageUrl })}
             style={[styles.card, { width: cardWidth, backgroundColor: colors.card, borderRadius: borderRadius.lg }]}
           >
             <View style={styles.imageContainer}>
-              <Image 
-                source={{ uri: item.image || item.imageUrl || DEFAULT_FOOD_IMAGE }} 
+              <RealImage 
+                query={item.title || 'mon an'}
+                initialUri={item.image || item.imageUrl || DEFAULT_FOOD_IMAGE}
                 style={[styles.cardImage, { borderTopLeftRadius: borderRadius.lg, borderTopRightRadius: borderRadius.lg }]} 
               />
               <View style={styles.ratingBadge}>
@@ -234,7 +255,8 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
                 <Text style={styles.ratingText}>{item.rating || '5.0'}</Text>
               </View>
               <TouchableOpacity 
-                style={styles.heartIcon} 
+                activeOpacity={0.7}
+                style={[styles.heartIcon, { backgroundColor: colors.card }]} 
                 onPress={() => removeFavorite(item)}
               >
                 <Ionicons name="heart" size={20} color="#FF3B30" />
@@ -274,7 +296,7 @@ export default function FavoritesScreen({ navigation: tabNavigation }: Props) {
         <Text style={[typography.body, { color: colors.background, flex: 1 }]}>
           Đã xóa khỏi mục yêu thích
         </Text>
-        <TouchableOpacity onPress={undoRemove}>
+        <TouchableOpacity activeOpacity={0.7} onPress={undoRemove}>
           <Text style={[typography.body, { color: colors.primary, fontWeight: 'bold' }]}>
             HOÀN TÁC
           </Text>
@@ -411,7 +433,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+    borderTopColor: '#E2DCD3',
     paddingTop: 8,
   },
   metaRow: {

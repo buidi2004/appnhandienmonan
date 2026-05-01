@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import AlertManager from '../components/CustomAlert';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { auth, createUserWithEmailAndPassword } from '../services/authService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -17,20 +20,36 @@ export default function RegisterScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!name || !emailOrPhone || !password || !confirmPassword) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+      AlertManager.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      AlertManager.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
       return;
     }
     
-    // Mock API call
-    Alert.alert('Thành công', 'Đăng ký tài khoản thành công!', [
-      { text: 'Đăng nhập ngay', onPress: () => navigation.replace('Auth') }
-    ]);
+    try {
+      AlertManager.alert('Đăng ký', 'Đang tạo tài khoản...');
+      const userCredential = await createUserWithEmailAndPassword(auth, emailOrPhone.trim(), password);
+      // Lưu token
+      const token = await userCredential.user.getIdToken();
+      await AsyncStorage.setItem('userToken', token);
+      // Lưu tên người dùng (tùy chọn)
+      await AsyncStorage.setItem('userName', name);
+      
+      AlertManager.alert('Thành công', 'Đăng ký tài khoản thành công!', [
+        { text: 'Bắt đầu', onPress: () => navigation.replace('Terms') }
+      ]);
+    } catch (error: any) {
+      console.error(error);
+      let errorMessage = 'Không thể tạo tài khoản';
+      if (error.code === 'auth/email-already-in-use') errorMessage = 'Email này đã được sử dụng';
+      if (error.code === 'auth/weak-password') errorMessage = 'Mật khẩu phải có ít nhất 6 ký tự';
+      if (error.code === 'auth/invalid-email') errorMessage = 'Email không hợp lệ';
+      AlertManager.alert('Lỗi đăng ký', errorMessage);
+    }
   };
 
   return (
@@ -158,3 +177,4 @@ const styles = StyleSheet.create({
   registerButtonText: {
   },
 });
+

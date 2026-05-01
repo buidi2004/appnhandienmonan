@@ -1,3 +1,4 @@
+import AlertManager from '../components/CustomAlert';
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -5,10 +6,10 @@ import {
   StyleSheet, 
   FlatList, 
   TouchableOpacity, 
-  SafeAreaView, 
   Alert,
   ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
@@ -68,17 +69,35 @@ export default function ShoppingListScreen({ navigation }: Props) {
   };
 
   const removeItem = (id: string) => {
-    const newItems = items.filter(item => item.id !== id);
-    saveItems(newItems);
+    AlertManager.alert(
+      'Xóa nguyên liệu',
+      'Bạn có chắc muốn xóa món này khỏi danh sách?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Xóa', style: 'destructive', onPress: () => {
+          const newItems = items.filter(item => item.id !== id);
+          saveItems(newItems);
+        }}
+      ]
+    );
   };
 
   const clearChecked = () => {
-    const newItems = items.filter(item => !item.checked);
-    saveItems(newItems);
+    AlertManager.alert(
+      'Dọn dẹp',
+      'Xóa tất cả món đã mua?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đồng ý', onPress: () => {
+          const newItems = items.filter(item => !item.checked);
+          saveItems(newItems);
+        }}
+      ]
+    );
   };
 
   const clearAll = () => {
-    Alert.alert(
+    AlertManager.alert(
       'Xóa tất cả',
       'Bạn có chắc chắn muốn xóa toàn bộ danh sách mua sắm không?',
       [
@@ -110,7 +129,7 @@ export default function ShoppingListScreen({ navigation }: Props) {
           ]}>
             {item.name}
           </Text>
-          {item.recipeTitle && (
+          {!!item.recipeTitle && (
             <Text style={[typography.caption, { color: colors.primary, fontSize: 11 }]}>
               Từ: {item.recipeTitle}
             </Text>
@@ -151,7 +170,21 @@ export default function ShoppingListScreen({ navigation }: Props) {
           </Text>
           <TouchableOpacity 
             style={[styles.startShoppingBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.lg }]}
-            onPress={() => navigation.navigate('MainTabs')}
+            onPress={() => {
+              navigation.navigate('AIResult', {
+                initialRecipe: {
+                  title: 'Gợi ý món mới',
+                  description: 'AI đang phân tích các món ngon phù hợp nhất cho bạn hôm nay...',
+                  ingredients: ['Thịt', 'Rau xanh', 'Gia vị'],
+                  instructions: 'Đang tải...',
+                  prep_time: '20 phút',
+                  difficulty: 'Dễ',
+                  calories: '300 kcal',
+                  image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop',
+                  imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop'
+                }
+              });
+            }}
           >
             <Text style={[typography.h3, { color: '#FFF' }]}>Tìm công thức ngay</Text>
           </TouchableOpacity>
@@ -173,13 +206,6 @@ export default function ShoppingListScreen({ navigation }: Props) {
                 {totalPrice.toLocaleString('vi-VN')} đ
               </Text>
             </View>
-            <TouchableOpacity 
-              style={[styles.checkoutBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.lg }]}
-              onPress={() => Alert.alert('Thông báo', 'Hệ thống đang kết nối với các siêu thị gần bạn...')}
-            >
-              <Ionicons name="cart" size={22} color="#FFF" />
-              <Text style={[typography.h3, { color: '#FFF', marginLeft: 10 }]}>ĐI CHỢ NGAY</Text>
-            </TouchableOpacity>
           </View>
 
           {items.some(i => i.checked) && (
@@ -267,3 +293,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
 });
+
+

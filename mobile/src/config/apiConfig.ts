@@ -13,6 +13,8 @@ const API_CONFIG = {
     SUGGEST_RECIPES: '/api/suggest-recipes',
     SCAN_AND_SUGGEST: '/api/scan-and-suggest',
     IDENTIFY_DISH: '/api/identify-dish',
+    SEARCH_IMAGE: '/api/search-image',
+    FAVORITES: '/api/favorites',
   }
 };
 

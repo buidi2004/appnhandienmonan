@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Linking, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Linking, Alert } from 'react-native';
+import AlertManager from '../components/CustomAlert';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AnimatedButton from '../components/AnimatedButton';
+import { auth, signInWithEmailAndPassword } from '../services/authService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -16,12 +20,38 @@ export default function AuthScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    await AsyncStorage.setItem('userToken', 'dummy-jwt-token-12345');
-    navigation.replace('Terms');
+    if (!email || !password) {
+      AlertManager.alert('Lỗi', 'Vui lòng nhập đầy đủ email và mật khẩu');
+      return;
+    }
+    try {
+      AlertManager.alert('Đăng nhập', 'Đang xác thực...');
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      // Lấy token thật từ Firebase để gửi cho Backend sau này
+      const token = await userCredential.user.getIdToken();
+      await AsyncStorage.setItem('userToken', token);
+      
+      // Nếu Firebase login thành công
+      AlertManager.alert('Đăng nhập thành công', `Chào mừng trở lại!`);
+      navigation.replace('Terms');
+    } catch (error: any) {
+      console.error(error);
+      let errorMessage = 'Sai email hoặc mật khẩu';
+      if (error.code === 'auth/user-not-found') errorMessage = 'Tài khoản không tồn tại';
+      if (error.code === 'auth/wrong-password') errorMessage = 'Mật khẩu không chính xác';
+      if (error.code === 'auth/invalid-email') errorMessage = 'Email không hợp lệ';
+      AlertManager.alert('Lỗi đăng nhập', errorMessage);
+    }
   };
 
   const handleOpenHotline = () => {
     Linking.openURL('tel:0901234567');
+  };
+
+  const handleSocialLogin = (platform: string) => {
+    AlertManager.alert('Đăng nhập', `Đang kết nối tới ${platform}...`, [
+      { text: 'Tiếp tục', onPress: handleLogin }
+    ]);
   };
 
   return (
@@ -66,22 +96,22 @@ export default function AuthScreen({ navigation }: Props) {
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={[styles.eyeIcon, { paddingHorizontal: spacing.md }]}>
+                <AnimatedButton onPress={() => setShowPassword(!showPassword)} style={[styles.eyeIcon, { paddingHorizontal: spacing.md }]}>
                   <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
+                </AnimatedButton>
               </View>
 
-              <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
+              <AnimatedButton style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
                 <Text style={[styles.forgotText, typography.caption, { color: colors.primary }]}>Quên mật khẩu?</Text>
-              </TouchableOpacity>
+              </AnimatedButton>
 
-              <TouchableOpacity 
+              <AnimatedButton 
                 style={[styles.loginButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md, marginTop: 24, shadowColor: colors.primary }]} 
                 onPress={handleLogin}
                 activeOpacity={0.8}
               >
                 <Text style={[styles.loginButtonText, typography.h3, { color: colors.background }]}>Đăng nhập</Text>
-              </TouchableOpacity>
+              </AnimatedButton>
             </View>
 
             {/* Cụm Social - Hiện đại & Gọn gàng */}
@@ -92,37 +122,37 @@ export default function AuthScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.socialRow}>
-              <TouchableOpacity style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Google')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="logo-google" size={24} color="#DB4437" />
-              </TouchableOpacity>
+              </AnimatedButton>
               
-              <TouchableOpacity style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Facebook')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="logo-facebook" size={24} color="#1877F2" />
-              </TouchableOpacity>
+              </AnimatedButton>
 
-              <TouchableOpacity style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Zalo')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="chatbubble" size={24} color="#0068FF" />
-              </TouchableOpacity>
+              </AnimatedButton>
 
-              <TouchableOpacity style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Apple')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="logo-apple" size={24} color={colors.text} />
-              </TouchableOpacity>
+              </AnimatedButton>
             </View>
           </View>
 
           <View style={[styles.footer, { marginTop: 40 }]}>
             <Text style={[styles.footerText, typography.body, { color: colors.textSecondary }]}>Bạn chưa có tài khoản? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <AnimatedButton onPress={() => navigation.navigate('Register')}>
               <Text style={[styles.registerText, typography.body, { color: colors.primary }]}>Đăng ký ngay</Text>
-            </TouchableOpacity>
+            </AnimatedButton>
           </View>
 
           {/* Hotline - Đẩy xuống đáy */}
           <View style={{ flex: 1 }} />
-          <TouchableOpacity style={[styles.hotlineContainer, { paddingVertical: 24 }]} onPress={handleOpenHotline}>
+          <AnimatedButton style={[styles.hotlineContainer, { paddingVertical: 24 }]} onPress={handleOpenHotline}>
             <Ionicons name="headset-outline" size={18} color={colors.textSecondary} />
             <Text style={[styles.hotlineText, typography.caption, { color: colors.textSecondary }]}> Gặp sự cố? Liên hệ Hotline: <Text style={[styles.hotphoneNumber, { color: colors.text }]}>0901.234.567</Text></Text>
-          </TouchableOpacity>
+          </AnimatedButton>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -223,3 +253,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   }
 });
+

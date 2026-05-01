@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, Modal } from 'react-native';
+import AlertManager from '../components/CustomAlert';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { scheduleDailyNotifications } from '../services/notificationService';
+import * as Notifications from 'expo-notifications';
 
 export default function SettingsScreen() {
-  const { colors, typography, spacing, borderRadius, isDark, isSystem, setManualTheme, setSystemTheme } = useAppTheme();
+  const { colors, typography, spacing, borderRadius, isDark, isSystem, language, setManualTheme, setSystemTheme, setLanguage } = useAppTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   
   const [pushNotif, setPushNotif] = useState(true);
@@ -15,8 +19,38 @@ export default function SettingsScreen() {
   const [cacheSize, setCacheSize] = useState('120 MB');
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      const notifSetting = await AsyncStorage.getItem('notificationsEnabled');
+      if (notifSetting !== null) {
+        setPushNotif(notifSetting === 'true');
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleTogglePushNotif = async (val: boolean) => {
+    setPushNotif(val);
+    await AsyncStorage.setItem('notificationsEnabled', val.toString());
+    if (val) {
+      await scheduleDailyNotifications();
+    } else {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
+  };
+
+  const handleLanguageChange = () => {
+    AlertManager.alert('Ngôn ngữ', 'Chọn ngôn ngữ hiển thị', [
+      { text: 'Tiếng Việt', onPress: () => setLanguage('vi') },
+      { text: 'English', onPress: () => setLanguage('en') },
+      { text: 'Hủy', style: 'cancel' }
+    ]);
+  };
+
+  const currentLanguageLabel = language === 'vi' ? 'Tiếng Việt' : 'English';
+
   const handleClearCache = () => {
-    Alert.alert('Xóa bộ nhớ đệm', 'Bạn có chắc chắn muốn xóa toàn bộ dữ liệu tạm thời?', [
+    AlertManager.alert('Xóa bộ nhớ đệm', 'Bạn có chắc chắn muốn xóa toàn bộ dữ liệu tạm thời?', [
       { text: 'Hủy', style: 'cancel' },
       { text: 'Xóa', style: 'destructive', onPress: () => setCacheSize('0 KB') }
     ]);
@@ -49,7 +83,7 @@ export default function SettingsScreen() {
         <Ionicons name={icon as any} size={22} color={colors.primary} />
         <View style={{ marginLeft: spacing.md }}>
           <Text style={[typography.body, { color: colors.text }]}>{title}</Text>
-          {subtitle && <Text style={[typography.caption, { color: colors.textSecondary }]}>{subtitle}</Text>}
+          {subtitle ? <Text style={[typography.caption, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
         </View>
       </View>
       {hasSwitch ? (
@@ -72,12 +106,13 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
         <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>THÔNG BÁO</Text>
-        {renderSettingRow('notifications-outline', 'Thông báo đẩy', true, pushNotif, setPushNotif)}
+        {renderSettingRow('notifications-outline', 'Thông báo đẩy', true, pushNotif, handleTogglePushNotif)}
         {renderSettingRow('mail-outline', 'Email thông báo', true, emailNotif, setEmailNotif)}
 
         <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>GIAO DIỆN</Text>
-        {renderSettingRow('moon-outline', 'Chế độ tối', true, isDark, (val) => setManualTheme(val))}
-        {renderSettingRow('phone-portrait-outline', 'Giao diện hệ thống', true, isSystem, (val) => val ? setSystemTheme() : setManualTheme(isDark))}
+        {renderSettingRow('moon-outline', 'Chế độ tối', true, isDark, (val) => setManualTheme(val ? 'dark' : 'light'))}
+        {renderSettingRow('phone-portrait-outline', 'Theo hệ thống', true, isSystem, (val) => val ? setSystemTheme() : setManualTheme(isDark ? 'dark' : 'light'))}
+        {renderSettingRow('language-outline', 'Ngôn ngữ', false, currentLanguageLabel, undefined, undefined, handleLanguageChange)}
 
         {/* Nhóm 1: Dữ liệu & Bộ nhớ */}
         <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>DỮ LIỆU & BỘ NHỚ</Text>
@@ -89,14 +124,14 @@ export default function SettingsScreen() {
         {renderSettingRow('language-outline', 'Ngôn ngữ', false, 'Tiếng Việt')}
 
         <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>BẢO MẬT</Text>
-        {renderSettingRow('lock-closed-outline', 'Đổi mật khẩu', false, undefined, undefined, undefined, () => Alert.alert('Tính năng', 'Đang kết nối với máy chủ xác thực...'))}
+        {renderSettingRow('lock-closed-outline', 'Đổi mật khẩu', false, undefined, undefined, undefined, () => navigation.navigate('ForgotPassword'))}
         {renderSettingRow('finger-print-outline', 'Xác thực sinh trắc học', true, true)}
 
         {/* Nhóm 3: Hỗ trợ & Thông tin */}
         <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>HỖ TRỢ & THÔNG TIN</Text>
-        {renderSettingRow('information-circle-outline', 'Giới thiệu', false, 'Bản 1.0.0', undefined, undefined, () => Alert.alert('Smart Cooking AI', 'Ứng dụng hỗ trợ nấu ăn thông minh hàng đầu.\nPhiên bản 1.0.0\n© 2026 SmartCooking Team'))}
+        {renderSettingRow('information-circle-outline', 'Giới thiệu', false, 'Bản 1.0.0', undefined, undefined, () => AlertManager.alert('Smart Cooking AI', 'Ứng dụng hỗ trợ nấu ăn thông minh hàng đầu.\nPhiên bản 1.0.0\n© 2026 SmartCooking Team'))}
         {renderSettingRow('document-text-outline', 'Điều khoản & Chính sách', false, undefined, undefined, undefined, () => navigation.navigate('Terms'))}
-        {renderSettingRow('bug-outline', 'Báo lỗi / Gửi phản hồi', false, undefined, undefined, undefined, () => Alert.alert('Phản hồi', 'Cảm ơn bạn! Chúng tôi đã ghi nhận yêu cầu hỗ trợ.'))}
+        {renderSettingRow('bug-outline', 'Báo lỗi / Gửi phản hồi', false, undefined, undefined, undefined, () => AlertManager.alert('Phản hồi', 'Cảm ơn bạn! Chúng tôi đã ghi nhận yêu cầu hỗ trợ.'))}
 
         <TouchableOpacity 
           style={[styles.deleteBtn, { marginTop: spacing.xl, padding: spacing.md, borderRadius: borderRadius.md, backgroundColor: `${colors.error}10` }]}
@@ -132,7 +167,7 @@ export default function SettingsScreen() {
                 style={[styles.modalBtn, { backgroundColor: colors.error }]} 
                 onPress={() => {
                   setIsDeleteModalVisible(false);
-                  Alert.alert('Đã yêu cầu', 'Tài khoản của bạn sẽ được xóa trong vòng 24h.');
+                  AlertManager.alert('Đã yêu cầu', 'Tài khoản của bạn sẽ được xóa trong vòng 24h.');
                 }}
               >
                 <Text style={[typography.body, { color: '#FFF', fontWeight: 'bold' }]}>Đồng ý xóa</Text>
@@ -199,3 +234,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   }
 });
+

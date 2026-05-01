@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import AlertManager from '../components/CustomAlert';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function EditProfileScreen() {
   const { colors, typography, spacing, borderRadius } = useAppTheme();
@@ -37,7 +39,7 @@ export default function EditProfileScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Lỗi', 'Cần quyền truy cập thư viện ảnh để đổi Avatar!');
+      AlertManager.alert('Lỗi', 'Cần quyền truy cập thư viện ảnh để đổi Avatar!');
       return;
     }
 
@@ -59,11 +61,11 @@ export default function EditProfileScreen() {
       await AsyncStorage.setItem('userName', name);
       await AsyncStorage.setItem('userBio', bio);
       
-      Alert.alert('Thành công', 'Đã lưu hồ sơ cá nhân!', [
+      AlertManager.alert('Thành công', 'Đã lưu hồ sơ cá nhân!', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (e) {
-      Alert.alert('Lỗi', 'Không thể lưu hồ sơ.');
+      AlertManager.alert('Lỗi', 'Không thể lưu hồ sơ.');
     }
   };
 
@@ -118,10 +120,21 @@ export default function EditProfileScreen() {
       </View>
 
       <TouchableOpacity 
-        style={[styles.saveBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.lg, marginTop: spacing.xl }]}
+        activeOpacity={0.8}
+        style={[styles.saveBtnWrapper, { shadowColor: colors.primary }]}
         onPress={saveProfile}
       >
-        <Text style={[typography.h3, { color: '#FFF', fontWeight: 'bold' }]}>Lưu thay đổi</Text>
+        <LinearGradient
+          colors={[colors.primary, `${colors.primary}CC`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.saveBtn}
+        >
+          <View style={styles.saveBtnIconWrapper}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+          </View>
+          <Text style={[typography.h3, { color: '#FFF', fontWeight: 'bold' }]}>Lưu thay đổi</Text>
+        </LinearGradient>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -177,13 +190,29 @@ const styles = StyleSheet.create({
     height: 120,
     textAlignVertical: 'top',
   },
+  saveBtnWrapper: {
+    marginTop: 40,
+    marginHorizontal: 20,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 10,
+  },
   saveBtn: {
-    paddingVertical: 16,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  }
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 30,
+    gap: 10,
+  },
+  saveBtnIconWrapper: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
+

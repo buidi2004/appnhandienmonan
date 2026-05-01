@@ -1,3 +1,4 @@
+import AlertManager from '../components/CustomAlert';
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
@@ -18,6 +19,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../theme/theme';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import AnimatedButton from '../components/AnimatedButton';
+import GlassCard from '../components/GlassCard';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { TabParamList, RootStackParamList } from '../../App';
 
@@ -88,7 +91,7 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
           navigation.navigate('AIResult', { imageUri: photo.uri });
         }
       } catch (error) {
-        Alert.alert('Lỗi', 'Không thể chụp ảnh');
+        AlertManager.alert('Lỗi', 'Không thể chụp ảnh');
       } finally {
         setIsProcessing(false);
       }
@@ -97,7 +100,7 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.5,
     });
@@ -124,18 +127,18 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
         <View style={styles.overlay}>
           {/* Tối ưu 1: Top Bar với nút Đóng & Flash */}
           <View style={styles.header}>
-            <TouchableOpacity 
+            <AnimatedButton 
               style={styles.iconBtn} 
               onPress={() => navigation.goBack()}
             >
               <Ionicons name="close" size={28} color="#FFF" />
-            </TouchableOpacity>
+            </AnimatedButton>
 
             <View style={styles.hintContainer}>
               <Text style={[styles.hintText, typography.caption]}>QUÉT NGUYÊN LIỆU</Text>
             </View>
 
-            <TouchableOpacity 
+            <AnimatedButton 
               style={styles.iconBtn} 
               onPress={() => setFlash(flash === 'off' ? 'on' : 'off')}
             >
@@ -144,7 +147,7 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
                 size={24} 
                 color={flash === 'on' ? colors.primary : "#FFF"} 
               />
-            </TouchableOpacity>
+            </AnimatedButton>
           </View>
           
           {/* Tối ưu 3: Khung nhận diện AI Style */}
@@ -171,11 +174,11 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
 
           {/* Tối ưu 2: Điều khiển phía dưới */}
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={pickImage}>
+            <AnimatedButton style={styles.secondaryBtn} onPress={pickImage}>
               <Ionicons name="images" size={28} color="#FFF" />
-            </TouchableOpacity>
+            </AnimatedButton>
 
-            <TouchableOpacity 
+            <AnimatedButton 
               style={styles.captureButton} 
               onPress={takePicture}
               disabled={isProcessing}
@@ -185,9 +188,9 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
               ) : (
                 <View style={[styles.captureInner, { backgroundColor: colors.primary }]} />
               )}
-            </TouchableOpacity>
+            </AnimatedButton>
 
-            <TouchableOpacity 
+            <AnimatedButton 
               style={styles.secondaryBtn}
               onPress={() => {
                 setIsProcessing(false);
@@ -195,7 +198,7 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
               }}
             >
               <Ionicons name="reload" size={28} color="#FFF" />
-            </TouchableOpacity>
+            </AnimatedButton>
           </View>
         </View>
 
@@ -355,3 +358,5 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 });
+
+

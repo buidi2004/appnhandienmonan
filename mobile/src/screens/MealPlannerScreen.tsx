@@ -1,3 +1,4 @@
+import AlertManager from '../components/CustomAlert';
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -5,16 +6,18 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView, 
   Modal,
   TextInput,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AnimatedButton from '../components/AnimatedButton';
+import GlassCard from '../components/GlassCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlanner'>;
 
@@ -82,7 +85,7 @@ export default function MealPlannerScreen({ navigation }: Props) {
 
   const openEdit = (slot: 'breakfast' | 'lunch' | 'dinner') => {
     setEditingSlot(slot);
-    setMealText(plan[selectedDay][slot]);
+    setMealText(plan[selectedDay]?.[slot] || '');
     setModalVisible(true);
   };
 
@@ -96,7 +99,8 @@ export default function MealPlannerScreen({ navigation }: Props) {
   };
 
   const renderSlot = (title: string, icon: string, slot: 'breakfast' | 'lunch' | 'dinner', color: string) => (
-    <TouchableOpacity 
+    <AnimatedButton 
+      activeOpacity={0.7}
       style={[styles.slotCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg }]}
       onPress={() => openEdit(slot)}
     >
@@ -110,26 +114,25 @@ export default function MealPlannerScreen({ navigation }: Props) {
         </Text>
       </View>
       <Ionicons name="create-outline" size={20} color={colors.border} />
-    </TouchableOpacity>
+    </AnimatedButton>
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <AnimatedButton activeOpacity={0.7} onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedButton>
         <Text style={[typography.h2, { color: colors.text, flex: 1, textAlign: 'center' }]}>Kế hoạch tuần</Text>
-        <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Tính năng nhắc nhở đang được phát triển!')}>
-          <Ionicons name="notifications-outline" size={24} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={{ width: 24 }} /> {/* Placeholder to balance back button */}
       </View>
 
       {/* Day Selector */}
       <View style={styles.daySelector}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.lg }}>
           {DAYS.map(day => (
-            <TouchableOpacity 
+            <AnimatedButton 
+              activeOpacity={0.7}
               key={day.id}
               onPress={() => setSelectedDay(day.id)}
               style={[
@@ -143,7 +146,7 @@ export default function MealPlannerScreen({ navigation }: Props) {
               <Text style={[styles.dayText, { color: selectedDay === day.id ? '#FFF' : colors.text }]}>
                 {day.label}
               </Text>
-            </TouchableOpacity>
+            </AnimatedButton>
           ))}
         </ScrollView>
       </View>
@@ -166,12 +169,31 @@ export default function MealPlannerScreen({ navigation }: Props) {
         {renderSlot('Bữa trưa', 'restaurant-outline', 'lunch', colors.primary)}
         {renderSlot('Bữa tối', 'moon-outline', 'dinner', '#5856D6')}
 
-        <View style={[styles.tipBox, { backgroundColor: `${colors.primary}10`, marginTop: 20 }]}>
+        <View style={[styles.tipBox, { backgroundColor: `${colors.primary}10`, marginTop: 20, marginBottom: 20 }]}>
           <Ionicons name="bulb-outline" size={20} color={colors.primary} />
           <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 10, flex: 1 }]}>
             Mẹo: Lập kế hoạch trước giúp bạn tiết kiệm 30% thời gian đi chợ và chuẩn bị món ăn!
           </Text>
         </View>
+
+        {/* PRO FEATURE: Auto AI Plan */}
+        <AnimatedButton 
+          activeOpacity={0.8}
+          style={[styles.proButton, { backgroundColor: '#FFD700' }]}
+          onPress={() => {
+            AlertManager.alert(
+              'Tính năng Cao cấp', 
+              'Tính năng "Tự động lên lịch bằng AI" chỉ dành riêng cho tài khoản Pro. Nâng cấp ngay để tận hưởng đặc quyền này?',
+              [
+                { text: 'Để sau', style: 'cancel' },
+                { text: 'Nâng cấp Pro', onPress: () => navigation.navigate('ProUpgrade' as any) }
+              ]
+            );
+          }}
+        >
+          <Ionicons name="sparkles" size={20} color="#000" />
+          <Text style={[typography.h3, { color: '#000', marginLeft: 8 }]}>Tự động gợi ý lịch ăn (Pro)</Text>
+        </AnimatedButton>
       </ScrollView>
 
       {/* Edit Modal */}
@@ -192,12 +214,12 @@ export default function MealPlannerScreen({ navigation }: Props) {
             />
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.border }]} onPress={() => setModalVisible(false)}>
+              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.border }]} onPress={() => setModalVisible(false)}>
                 <Text style={{ color: colors.textSecondary }}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={handleSaveMeal}>
+              </AnimatedButton>
+              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={handleSaveMeal}>
                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Lưu kế hoạch</Text>
-              </TouchableOpacity>
+              </AnimatedButton>
             </View>
           </View>
         </View>
@@ -269,4 +291,17 @@ const styles = StyleSheet.create({
   input: { padding: 16, fontSize: 16 },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 },
   modalBtn: { flex: 0.48, padding: 16, borderRadius: 12, alignItems: 'center' },
+  proButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 40,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  }
 });

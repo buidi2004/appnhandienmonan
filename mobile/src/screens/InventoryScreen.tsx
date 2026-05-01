@@ -1,3 +1,4 @@
+import AlertManager from '../components/CustomAlert';
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -5,18 +6,21 @@ import {
   StyleSheet, 
   FlatList, 
   TouchableOpacity, 
-  SafeAreaView, 
   Alert,
   TextInput,
   Modal,
   ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AnimatedButton from '../components/AnimatedButton';
+import GlassCard from '../components/GlassCard';
+import EmptyState from '../components/EmptyState';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Inventory'>;
 
@@ -72,7 +76,7 @@ export default function InventoryScreen({ navigation }: Props) {
 
   const addItem = () => {
     if (!newItemName.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên thực phẩm');
+      AlertManager.alert('Lỗi', 'Vui lòng nhập tên thực phẩm');
       return;
     }
 
@@ -93,7 +97,7 @@ export default function InventoryScreen({ navigation }: Props) {
   };
 
   const removeItem = (id: string) => {
-    Alert.alert('Xóa thực phẩm', 'Bạn có chắc muốn xóa món này khỏi tủ lạnh?', [
+    AlertManager.alert('Xóa thực phẩm', 'Bạn có chắc muốn xóa món này khỏi tủ lạnh?', [
       { text: 'Hủy', style: 'cancel' },
       { text: 'Xóa', style: 'destructive', onPress: () => {
         const updated = items.filter(i => i.id !== id);
@@ -137,9 +141,9 @@ export default function InventoryScreen({ navigation }: Props) {
             {getStatusText(item.expiryDate)}
           </Text>
         </View>
-        <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.deleteBtn}>
+        <AnimatedButton activeOpacity={0.7} onPress={() => removeItem(item.id)} style={styles.deleteBtn}>
           <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </AnimatedButton>
       </View>
     );
   };
@@ -147,13 +151,14 @@ export default function InventoryScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <AnimatedButton activeOpacity={0.7} onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedButton>
         <Text style={[typography.h2, { color: colors.text, flex: 1, textAlign: 'center' }]}>Tủ lạnh của bạn</Text>
         
         {items.length > 0 && (
-          <TouchableOpacity 
+          <AnimatedButton 
+            activeOpacity={0.7}
             onPress={() => {
               const names = items.map(i => i.name);
               navigation.navigate('AIResult', { initialIngredients: names });
@@ -161,12 +166,12 @@ export default function InventoryScreen({ navigation }: Props) {
             style={styles.magicBtn}
           >
             <Ionicons name="sparkles" size={24} color={colors.primary} />
-          </TouchableOpacity>
+          </AnimatedButton>
         )}
 
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.addBtn}>
+        <AnimatedButton activeOpacity={0.7} onPress={() => setModalVisible(true)} style={styles.addBtn}>
           <Ionicons name="add-circle" size={32} color={colors.primary} />
-        </TouchableOpacity>
+        </AnimatedButton>
       </View>
 
       <FlatList
@@ -175,13 +180,14 @@ export default function InventoryScreen({ navigation }: Props) {
         keyExtractor={item => item.id}
         contentContainerStyle={{ padding: spacing.lg }}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="snow-outline" size={80} color={colors.border} />
-            <Text style={[typography.h3, { color: colors.textSecondary, marginTop: 16 }]}>Tủ lạnh đang trống</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
-              Hãy thêm thực phẩm bạn đang có để AI gợi ý món ăn phù hợp nhất!
-            </Text>
-          </View>
+          <EmptyState 
+            icon="snow-outline"
+            title="Tủ lạnh đang trống"
+            description="Hãy thêm thực phẩm bạn đang có để AI gợi ý món ăn phù hợp nhất!"
+            buttonText="Thêm ngay"
+            onPress={() => setModalVisible(true)}
+            style={{ marginTop: 60 }}
+          />
         }
       />
 
@@ -210,7 +216,8 @@ export default function InventoryScreen({ navigation }: Props) {
             <Text style={[typography.caption, { color: colors.text, marginTop: 16, marginBottom: 8 }]}>Danh mục</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
               {CATEGORIES.map(cat => (
-                <TouchableOpacity 
+                <AnimatedButton 
+                  activeOpacity={0.7}
                   key={cat}
                   onPress={() => setNewItemCategory(cat)}
                   style={[
@@ -222,11 +229,12 @@ export default function InventoryScreen({ navigation }: Props) {
                   ]}
                 >
                   <Text style={{ color: newItemCategory === cat ? '#FFF' : colors.text }}>{cat}</Text>
-                </TouchableOpacity>
+                </AnimatedButton>
               ))}
             </ScrollView>
 
-            <TouchableOpacity 
+            <AnimatedButton 
+              activeOpacity={0.7}
               style={[styles.dateBtn, { backgroundColor: colors.card, borderRadius: borderRadius.md }]}
               onPress={() => setShowDatePicker(true)}
             >
@@ -234,7 +242,7 @@ export default function InventoryScreen({ navigation }: Props) {
               <Text style={{ marginLeft: 10, color: colors.text }}>
                 Hạn sử dụng: {expiryDate.toLocaleDateString('vi-VN')}
               </Text>
-            </TouchableOpacity>
+            </AnimatedButton>
 
             {showDatePicker && (
               <DateTimePicker
@@ -249,12 +257,12 @@ export default function InventoryScreen({ navigation }: Props) {
             )}
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.border }]} onPress={() => setModalVisible(false)}>
+              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.border }]} onPress={() => setModalVisible(false)}>
                 <Text style={{ color: colors.textSecondary }}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={addItem}>
+              </AnimatedButton>
+              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={addItem}>
                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Thêm vào tủ</Text>
-              </TouchableOpacity>
+              </AnimatedButton>
             </View>
           </View>
         </View>
@@ -297,3 +305,5 @@ const styles = StyleSheet.create({
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
   modalBtn: { flex: 0.48, padding: 16, borderRadius: 12, alignItems: 'center' },
 });
+
+

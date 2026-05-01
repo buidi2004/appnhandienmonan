@@ -4,6 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeImage } from '../components/RealImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
@@ -60,7 +61,7 @@ export default function OnboardingScreen({ navigation }: Props) {
       </TouchableOpacity>
 
       <View style={styles.imageContainer}>
-        <Image source={{ uri: slide.image }} style={[styles.image, { borderRadius: borderRadius.xl }]} />
+        <SafeImage uri={slide.image} style={[styles.image, { borderRadius: borderRadius.xl }]} />
         <View style={[styles.iconWrapper, { backgroundColor: colors.card, shadowColor: colors.primary }]}>
           <Ionicons name={slide.icon as any} size={40} color={colors.primary} />
         </View>

@@ -42,9 +42,20 @@ import InventoryScreen from './src/screens/InventoryScreen';
 import MealPlannerScreen from './src/screens/MealPlannerScreen';
 import CommunityScreen from './src/screens/CommunityScreen';
 import CookingModeScreen from './src/screens/CookingModeScreen';
+import HealthProfileScreen from './src/screens/HealthProfileScreen';
+import CookingHistoryScreen from './src/screens/CookingHistoryScreen';
+import ProUpgradeScreen from './src/screens/ProUpgradeScreen';
+import NutritionDiaryScreen from './src/screens/NutritionDiaryScreen';
+import OnlineShoppingScreen from './src/screens/OnlineShoppingScreen';
+import CookingCompleteScreen from './src/screens/CookingCompleteScreen';
+import IngredientInputScreen from './src/screens/IngredientInputScreen';
+import IngredientReviewScreen from './src/screens/IngredientReviewScreen';
+import PrepChecklistScreen from './src/screens/PrepChecklistScreen';
 
 import { ThemeProvider, useAppTheme, typography } from './src/theme/theme';
-import { requestNotificationPermissions, scheduleDailyNotifications, sendTestNotification } from './src/services/notificationService';
+import { requestNotificationPermissions, scheduleDailyNotifications } from './src/services/notificationService';
+import AlertManager, { CustomAlert } from './src/components/CustomAlert';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -64,7 +75,16 @@ export type RootStackParamList = {
   Inventory: undefined;
   MealPlanner: undefined;
   Community: undefined;
-  CookingMode: { steps: string[]; dishName: string };
+  CookingMode: { steps: string[]; dishName: string; ingredients?: string[]; tips?: string };
+  HealthProfile: undefined;
+  CookingHistory: undefined;
+  ProUpgrade: undefined;
+  NutritionDiary: undefined;
+  OnlineShopping: undefined;
+  CookingComplete: { dishName: string; totalSteps: number; cookingTime: number; photosCount: number };
+  IngredientInput: undefined;
+  IngredientReview: { imageUri?: string; detectedIngredients: string[] };
+  PrepChecklist: { steps: string[]; dishName: string; ingredients?: string[]; tips?: string };
 };
 
 export type TabParamList = {
@@ -203,9 +223,10 @@ function MainApp() {
     async function setupNotifications() {
       const hasPermission = await requestNotificationPermissions();
       if (hasPermission) {
-        await scheduleDailyNotifications();
-        // Gửi một thông báo test ngay lập tức (sau 5 giây) để verify
-        await sendTestNotification();
+        const isEnabled = await AsyncStorage.getItem('notificationsEnabled');
+        if (isEnabled !== 'false') { // Mặc định là true nếu chưa set
+          await scheduleDailyNotifications();
+        }
       }
     }
     setupNotifications();
@@ -239,16 +260,7 @@ function MainApp() {
           <Stack.Screen 
             name="AIResult" 
             component={AIResultScreen} 
-            options={{ 
-              headerShown: true, 
-              title: 'Kết quả phân tích',
-              headerStyle: { backgroundColor: colors.background },
-              headerTintColor: colors.text,
-              headerTitleStyle: {
-                fontFamily: 'Poppins_600SemiBold',
-                fontSize: 20,
-              },
-            }} 
+            options={{ headerShown: false }} 
           />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: true, title: 'Chỉnh sửa hồ sơ', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: true, title: 'Cài đặt chung', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
@@ -257,9 +269,20 @@ function MainApp() {
           <Stack.Screen name="ShoppingList" component={ShoppingListScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Inventory" component={InventoryScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MealPlanner" component={MealPlannerScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="CookingMode" component={CookingModeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Community" component={CommunityScreen} />
+          <Stack.Screen name="CookingMode" component={CookingModeScreen} options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="HealthProfile" component={HealthProfileScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="CookingHistory" component={CookingHistoryScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ProUpgrade" component={ProUpgradeScreen} options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen name="NutritionDiary" component={NutritionDiaryScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="OnlineShopping" component={OnlineShoppingScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="CookingComplete" component={CookingCompleteScreen} options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="IngredientInput" component={IngredientInputScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="IngredientReview" component={IngredientReviewScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="PrepChecklist" component={PrepChecklistScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
+      <CustomAlert />
     </SafeAreaProvider>
   );
 }

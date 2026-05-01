@@ -1,3 +1,4 @@
+import AlertManager from '../components/CustomAlert';
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, 
@@ -23,11 +24,17 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_CONFIG from '../config/apiConfig';
+import { RealImage, SafeImage, fetchImageUrl } from '../components/RealImage';
+import { LinearGradient } from 'expo-linear-gradient';
+import AnimatedButton from '../components/AnimatedButton';
+import GlassCard from '../components/GlassCard';
+import EmptyState from '../components/EmptyState';
 
 const { width, height } = Dimensions.get('window');
 const HEADER_MAX_HEIGHT = 280;
 const HEADER_MIN_HEIGHT = 100;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+const sentencesRegex = /[.!?](?:\s+|$)/;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AIResult'>;
 
@@ -41,44 +48,46 @@ interface Recipe {
   health_warning?: string;
   tips?: string;
   imageUrl?: string;
+  available_ingredients?: string[];
+  missing_ingredients?: string[];
+  readiness?: 'ready' | 'missing_items' | 'health_check';
+  health_score?: number;
+  health_benefits?: string[];
+  health_warnings?: string[];
+  substitutions?: {original: string, replacement: string, reason: string}[];
+  nutrition_detail?: {carbs: string, protein: string, fat: string, sugar: string, sodium: string};
 }
 
-// 2. Xử lý logic Ảnh Dự phòng (Fallback Image)
-import { LinearGradient } from 'expo-linear-gradient';
-
-const SafeImage = ({ uri, style }: { uri?: string, style: any }) => {
-  const [error, setError] = useState(false);
-
-  if (!uri || error) {
-    return (
-      <View style={[style, { backgroundColor: '#1A1A1A', overflow: 'hidden' }]}>
-        <LinearGradient
-          colors={['#2C2C2C', '#1A1A1A']}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', opacity: 0.2 }}>
-          <Ionicons name="restaurant-outline" size={48} color="#FFF" />
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <Image 
-      source={{ uri }} 
-      style={style} 
-      onError={() => setError(true)}
-    />
-  );
-};
 export default function AIResultScreen({ route, navigation }: Props) {
   const { colors, typography, spacing, borderRadius } = useAppTheme();
   const { imageUri, initialIngredients, initialRecipe } = route.params;
   const [isScanning, setIsScanning] = useState(!initialRecipe);
   const [isSuggesting, setIsSuggesting] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState(initialRecipe ? '' : 'Đang khởi tạo...');
+  const [loadingMessage, setLoadingMessage] = useState('Đang khởi tạo...');
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipe ? [initialRecipe] : []);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>(initialIngredients || (initialRecipe ? initialRecipe.ingredients : []));
+
+  // Hiệu ứng xoay vòng thông báo loading để tăng cảm giác phản hồi nhanh
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isSuggesting || isScanning) {
+      const messages = isScanning 
+        ? ['Đang gửi ảnh lên máy chủ...', 'Đang nhận diện từng nguyên liệu...', 'Sắp xong rồi...']
+        : [
+            'Đang dựng món từ nguyên liệu trong bếp...',
+            'Đang chọn công thức ít thiếu nguyên liệu nhất...',
+            'Đang tính toán giá trị dinh dưỡng...',
+            'Đang kiểm tra cảnh báo sức khỏe...',
+            'Sắp xong rồi, chuẩn bị vào bếp nhé.',
+          ];
+      let i = 0;
+      interval = setInterval(() => {
+        i = (i + 1) % messages.length;
+        setLoadingMessage(messages[i]);
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isSuggesting, isScanning]);
   
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
@@ -99,13 +108,21 @@ export default function AIResultScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const init = async () => {
+      let healthProfile = null;
+      try {
+        const saved = await AsyncStorage.getItem('healthProfile');
+        if (saved) healthProfile = JSON.parse(saved);
+      } catch (e) {
+        console.log('Error reading health profile:', e);
+      }
+
       if (initialRecipe) {
         setIsScanning(false);
         checkIfBookmarked([initialRecipe]);
       } else if (initialIngredients && initialIngredients.length > 0) {
-        await suggestRecipesDirectly(initialIngredients);
+        await suggestRecipesDirectly(initialIngredients, healthProfile);
       } else if (imageUri) {
-        await analyzeImage();
+        await analyzeImage(healthProfile);
       } else {
         setIsScanning(false);
       }
@@ -115,6 +132,23 @@ export default function AIResultScreen({ route, navigation }: Props) {
 
   const checkIfBookmarked = async (recipeList: Recipe[]) => {
     try {
+      // Ưu tiên lấy từ API DB
+      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      const currentFavorites = response.data || [];
+      
+      const newBookmarked: Record<number, boolean> = {};
+      recipeList.forEach((recipe, index) => {
+        if (currentFavorites.some((f: any) => f.title === recipe.title)) {
+          newBookmarked[index] = true;
+        }
+      });
+      setBookmarked(newBookmarked);
+      
+      // Sync lại local cho chắc chắn
+      await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
+    } catch (e) {
+      console.error('Check Bookmark Error (DB failed, falling back to local):', e);
+      // Fallback local
       const stored = await AsyncStorage.getItem('favorites');
       if (stored) {
         const currentFavorites = JSON.parse(stored);
@@ -126,8 +160,6 @@ export default function AIResultScreen({ route, navigation }: Props) {
         });
         setBookmarked(newBookmarked);
       }
-    } catch (e) {
-      console.error('Check Bookmark Error:', e);
     }
   };
 
@@ -153,14 +185,17 @@ export default function AIResultScreen({ route, navigation }: Props) {
     }
   };
 
-  const suggestRecipesDirectly = async (ingredients: string[]) => {
+  const suggestRecipesDirectly = async (ingredients: string[], healthProfile: any = null) => {
     try {
       setIsSuggesting(true);
-      setLoadingMessage('AI đang sáng tạo món ăn từ tủ lạnh của bạn...');
+      setLoadingMessage('Đang dựng món từ nguyên liệu của bạn...');
       
-      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`, {
-        ingredients: ingredients
-      });
+      const payload: any = { ingredients: ingredients };
+      if (healthProfile) {
+        payload.health_profile = healthProfile;
+      }
+
+      const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`, payload);
       
       if (response.data && response.data.recipes) {
         setRecipes(response.data.recipes);
@@ -169,7 +204,7 @@ export default function AIResultScreen({ route, navigation }: Props) {
       setIsSuggesting(false);
     } catch (error) {
       console.log('Suggest Error:', error);
-      Alert.alert('Lỗi', 'Không thể lấy gợi ý món ăn.');
+      AlertManager.alert('Lỗi', 'Không thể lấy gợi ý món ăn.');
       setIsSuggesting(false);
     }
   };
@@ -180,10 +215,10 @@ export default function AIResultScreen({ route, navigation }: Props) {
     if (!selectedRecipe) setShowVideo(false);
   }, [selectedRecipe]);
 
-  const analyzeImage = async () => {
+  const analyzeImage = async (healthProfile: any = null) => {
     try {
       setIsScanning(true);
-      setLoadingMessage('Giai đoạn 1: Đang tải ảnh lên...');
+      setLoadingMessage('Đang phân tích nguyên liệu...');
       
       const scanUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SCAN_INGREDIENTS}`; 
       
@@ -193,6 +228,9 @@ export default function AIResultScreen({ route, navigation }: Props) {
         name: 'photo.jpg',
         type: 'image/jpeg',
       } as any);
+      if (healthProfile) {
+        formData.append('health_profile', JSON.stringify(healthProfile));
+      }
 
       // Bước 1: Chỉ quét nguyên liệu (Nhanh)
       const scanResponse = await axios.post(scanUrl, formData, {
@@ -207,15 +245,25 @@ export default function AIResultScreen({ route, navigation }: Props) {
       setDetectedIngredients(ingredients);
       setIsScanning(false); // Xong bước 1, hiện UI ngay
       
+      // Increment scan count for profile
+      try {
+        const current = await AsyncStorage.getItem('scanCount');
+        const newCount = (current ? parseInt(current) : 0) + 1;
+        await AsyncStorage.setItem('scanCount', newCount.toString());
+      } catch (e) {}
+      
       // Bước 2: Gọi AI sáng tạo công thức (Chậm hơn)
       if (ingredients.length > 0) {
         setIsSuggesting(true);
-        setLoadingMessage('Giai đoạn 2: Đang sáng tạo công thức...');
+        setLoadingMessage('Đang dựng món từ nguyên liệu trong bếp...');
         const suggestUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`;
         
-        const suggestResponse = await axios.post(suggestUrl, {
-          ingredients: ingredients
-        });
+        const payload: any = { ingredients: ingredients };
+        if (healthProfile) {
+          payload.health_profile = healthProfile;
+        }
+
+        const suggestResponse = await axios.post(suggestUrl, payload);
         
         if (suggestResponse.data && suggestResponse.data.recipes) {
           setRecipes(suggestResponse.data.recipes);
@@ -227,13 +275,29 @@ export default function AIResultScreen({ route, navigation }: Props) {
       }
     } catch (error: any) {
       console.error('AI Error:', error);
-      Alert.alert(
+      AlertManager.alert(
         'Lỗi phân tích',
         error.response?.data?.error || 'Không thể kết nối với máy chủ AI. Vui lòng thử lại.',
         [{ text: 'Quay lại', onPress: () => navigation.goBack() }]
       );
       setIsScanning(false);
       setIsSuggesting(false);
+    }
+  };
+
+  const suggestSubstitutions = async (ingredient: string) => {
+    try {
+      showToast(`Đang tìm nguyên liệu thay thế cho ${ingredient}...`);
+      const res = await axios.get(`${API_CONFIG.BASE_URL}/suggest-substitutions?ingredient=${encodeURIComponent(ingredient)}`);
+      if (res.data && res.data.substitutions) {
+        AlertManager.alert(
+          `Thay thế ${ingredient}`,
+          `Bạn có thể dùng: ${res.data.substitutions.join(', ')}`,
+          [{ text: 'Đã hiểu' }]
+        );
+      }
+    } catch (e) {
+      AlertManager.alert('Gợi ý', `Bạn có thể thử dùng nguyên liệu tương tự hoặc bỏ qua ${ingredient} nếu không cần thiết.`);
     }
   };
 
@@ -245,34 +309,84 @@ export default function AIResultScreen({ route, navigation }: Props) {
   const toggleBookmark = async (index: number) => {
     const recipe = recipes[index];
     try {
-      const stored = await AsyncStorage.getItem('favorites');
-      let currentFavorites = stored ? JSON.parse(stored) : [];
+      // Lấy danh sách hiện tại để xử lý xóa nếu cần
+      const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      let currentFavorites = response.data || [];
       
       if (!bookmarked[index]) {
-        // Add to favorites
-        // Use title as ID for now or generate one
+        // LƯU VÀO DB
+        let resolvedImageUrl = recipe.imageUrl;
+        if (!resolvedImageUrl) {
+          const fetched = await fetchImageUrl(recipe.title, false);
+          if (fetched) resolvedImageUrl = fetched;
+        }
         const newFav = { 
           ...recipe, 
-          id: recipe.title + index, 
-          category: 'Tất cả', // Default category
-          rating: 5.0, // Default rating
+          category: 'Tất cả',
+          rating: 5.0,
           time: recipe.prep_time,
-          image: recipe.imageUrl
+          image: resolvedImageUrl,
+          imageUrl: resolvedImageUrl
         };
-        currentFavorites.push(newFav);
-        await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
-        showToast('Đã thêm vào mục yêu thích!');
+        
+        await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, newFav);
+        showToast('Đã lưu vào mục yêu thích (Cloud)!');
       } else {
-        // Remove from favorites
-        currentFavorites = currentFavorites.filter((f: any) => f.title !== recipe.title);
-        await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
-        showToast('Đã xóa khỏi mục yêu thích.');
+        // XÓA KHỎI DB
+        const itemToDelete = currentFavorites.find((f: any) => f.title === recipe.title);
+        if (itemToDelete && itemToDelete.id) {
+          await axios.delete(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}/${itemToDelete.id}`);
+          showToast('Đã xóa khỏi mục yêu thích.');
+        }
       }
+      
       setBookmarked(prev => ({ ...prev, [index]: !prev[index] }));
+      
+      // Update local cache
+      const updatedResponse = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`);
+      await AsyncStorage.setItem('favorites', JSON.stringify(updatedResponse.data));
+      
     } catch (error) {
       console.error('Bookmark Error:', error);
-      showToast('Có lỗi xảy ra khi lưu.');
+      showToast('Lỗi kết nối Database.');
     }
+  };
+
+  const getRecipeDecision = (recipe: Recipe) => {
+    const normalizedDetected = detectedIngredients.map(item => item.toLowerCase().trim());
+    const inferredMissing = recipe.ingredients?.filter((ingredient) => {
+      const normalized = ingredient.toLowerCase().trim();
+      return normalizedDetected.length > 0 && !normalizedDetected.some(item => normalized.includes(item) || item.includes(normalized));
+    }) || [];
+    const missing = recipe.missing_ingredients && recipe.missing_ingredients.length > 0
+      ? recipe.missing_ingredients
+      : inferredMissing.slice(0, 3);
+    const hasHealthRisk = Number(recipe.health_score || 100) < 50 || !!recipe.health_warning || ((recipe.health_warnings?.length || 0) > 0);
+
+    if (hasHealthRisk) {
+      return {
+        icon: 'alert-circle' as const,
+        title: 'Cần kiểm tra trước khi nấu',
+        text: 'Món này có lưu ý sức khỏe. Đọc cảnh báo và thay thế nguyên liệu nếu cần.',
+        tone: colors.warning,
+      };
+    }
+
+    if (missing.length > 0) {
+      return {
+        icon: 'basket' as const,
+        title: `Thiếu ${missing.length} nguyên liệu`,
+        text: `Cần bổ sung: ${missing.join(', ')}.`,
+        tone: colors.accent,
+      };
+    }
+
+    return {
+      icon: 'checkmark' as const,
+      title: 'Có thể nấu ngay',
+      text: `${recipe.ingredients?.length || 0} nguyên liệu cần chuẩn bị. Kiểm tra nhanh rồi chuyển sang chế độ nấu.`,
+      tone: colors.primary,
+    };
   };
 
   if (isScanning) {
@@ -282,17 +396,36 @@ export default function AIResultScreen({ route, navigation }: Props) {
           <ActivityIndicator size="large" color={colors.primary} />
           <View style={styles.loadingSteps}>
             <View style={styles.loadingStepRow}>
-              <Ionicons name="cloud-upload-outline" size={20} color={loadingMessage.includes('Giai đoạn 2') ? colors.success : colors.primary} />
-              <Text style={[styles.loadingStepText, { color: loadingMessage.includes('Giai đoạn 2') ? colors.textSecondary : colors.text }]}>Tải ảnh & Nhận diện</Text>
+              <Ionicons name="cloud-upload-outline" size={20} color={loadingMessage.includes('Thiết kế') || loadingMessage.includes('thiết kế') ? colors.success : colors.primary} />
+              <Text style={[styles.loadingStepText, { color: loadingMessage.includes('Thiết kế') || loadingMessage.includes('thiết kế') ? colors.textSecondary : colors.text }]}>Nhận diện nguyên liệu</Text>
             </View>
             <View style={styles.loadingStepRow}>
               <Ionicons name="sparkles-outline" size={20} color={colors.border} />
-              <Text style={[styles.loadingStepText, { color: colors.textSecondary }]}>Sáng tạo công thức</Text>
+              <Text style={[styles.loadingStepText, { color: colors.textSecondary }]}>Thiết kế thực đơn</Text>
             </View>
           </View>
         </View>
         <Text style={[styles.loadingText, typography.body, { color: colors.textSecondary, marginTop: 20 }]}>{loadingMessage}</Text>
       </View>
+    );
+  }
+
+  if (!isScanning && recipes.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: 20 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={28} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+        <EmptyState 
+          icon="search-outline"
+          title="Không tìm thấy món"
+          description="Rất tiếc, AI không thể tìm thấy món ăn nào phù hợp với nguyên liệu của bạn. Hãy thử chụp ảnh rõ nét hơn hoặc nhập nguyên liệu khác nhé!"
+          buttonText="Thử lại"
+          onPress={() => navigation.goBack()}
+        />
+      </SafeAreaView>
     );
   }
 
@@ -312,7 +445,15 @@ export default function AIResultScreen({ route, navigation }: Props) {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Collapsible Header */}
       <Animated.View style={[styles.header, { height: HEADER_MAX_HEIGHT, transform: [{ translateY: headerTranslateY }], zIndex: 10 }]}>
-        <Animated.Image source={{ uri: imageUri }} style={[styles.headerImage, { opacity: imageOpacity }]} />
+        <Animated.Image source={{ uri: imageUri || (recipes.length > 0 ? recipes[0].imageUrl : undefined) }} style={[styles.headerImage, { opacity: imageOpacity }]} />
+        {/* Back Button */}
+        <AnimatedButton 
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()} 
+          style={styles.floatingBackBtn}
+        >
+          <Ionicons name="arrow-back" size={22} color="#FFF" />
+        </AnimatedButton>
       </Animated.View>
 
       <Animated.ScrollView
@@ -326,14 +467,14 @@ export default function AIResultScreen({ route, navigation }: Props) {
             <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}20` }]}>
               <Ionicons name="scan" size={20} color={colors.primary} />
             </View>
-            <Text style={[styles.sectionTitle, typography.h2, { color: colors.text }]}>Nguyên liệu nhận diện</Text>
+            <Text style={[styles.sectionTitle, typography.h2, { color: colors.text }]}>Nguyên liệu trong bếp</Text>
           </View>
           
           <View style={[styles.tagsContainer, { marginBottom: spacing.xl }]}>
             {detectedIngredients.map((item, index) => (
-              <View key={index} style={[styles.tag, { backgroundColor: `${colors.success}15`, borderColor: colors.success }]}>
+              <View key={index} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, backgroundColor: `${colors.success}15`, borderColor: colors.success }}>
                 <Ionicons name="checkmark-circle" size={14} color={colors.success} style={{ marginRight: 4 }} />
-                <Text style={[styles.tagText, { color: colors.success }]}>{item}</Text>
+                <Text style={{ fontWeight: 'bold', fontSize: 13, color: colors.success }}>{item}</Text>
               </View>
             ))}
           </View>
@@ -344,25 +485,31 @@ export default function AIResultScreen({ route, navigation }: Props) {
               <View style={[styles.iconCircle, { backgroundColor: `${colors.secondary}20` }]}>
                 <Ionicons name="restaurant" size={20} color={colors.secondary} />
               </View>
-              <Text style={[styles.sectionTitle, typography.h2, { color: colors.text }]}>Gợi ý món ăn</Text>
+              <Text style={[styles.sectionTitle, typography.h2, { color: colors.text }]}>Món có thể nấu</Text>
             </View>
             {isSuggesting && <ActivityIndicator size="small" color={colors.primary} />}
           </View>
 
-          {isSuggesting && recipes.length === 0 ? (
-            <View style={[styles.recipeLoadingCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg }]}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={[typography.body, { color: colors.textSecondary, marginLeft: 12 }]}>AI đang lên thực đơn cho bạn...</Text>
-            </View>
-          ) : (
-            recipes.map((recipe, index) => (
+            {isSuggesting && recipes.length === 0 ? (
+              <View style={[styles.recipeLoadingCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg, borderColor: colors.border }]}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={[typography.body, { color: colors.textSecondary, marginLeft: 12 }]}>Đang xếp hạng món phù hợp nhất...</Text>
+              </View>
+            ) : (
+            recipes.map((recipe, index) => {
+              const decision = getRecipeDecision(recipe);
+              return (
             <View key={index} style={[styles.recipeCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg, marginBottom: spacing.xl }]}>
               {/* 1. Compact Card: Ảnh 200px */}
-              <SafeImage uri={recipe.imageUrl} style={styles.recipeImage} />
+              <RealImage 
+                query={recipe.title} 
+                initialUri={recipe.imageUrl} 
+                style={styles.recipeImage} 
+              />
               
-              <TouchableOpacity style={styles.bookmarkBtn} onPress={() => toggleBookmark(index)}>
+              <AnimatedButton activeOpacity={0.7} style={styles.bookmarkBtn} onPress={() => toggleBookmark(index)}>
                 <Ionicons name={bookmarked[index] ? "heart" : "heart-outline"} size={26} color={bookmarked[index] ? colors.error : "#FFF"} />
-              </TouchableOpacity>
+              </AnimatedButton>
 
               <View style={{ padding: spacing.lg }}>
                 <Text style={[styles.recipeName, typography.h2, { color: colors.text, marginBottom: spacing.xs }]}>{recipe.title}</Text>
@@ -383,25 +530,81 @@ export default function AIResultScreen({ route, navigation }: Props) {
                   </View>
                 </View>
 
-                {/* 1. Khối Cảnh báo (màu vàng) */}
-                {recipe.health_warning && (
-                  <View style={[styles.warningBox, { backgroundColor: '#FFF9E6', borderColor: '#FFE58F' }]}>
-                    <Ionicons name="warning" size={20} color="#D48806" style={{ marginRight: 8 }} />
-                    <Text style={[typography.caption, { color: '#856404', flex: 1, fontWeight: '500' }]}>{recipe.health_warning}</Text>
+                <View style={[styles.recipeDecisionBox, { backgroundColor: `${decision.tone}10`, borderColor: `${decision.tone}28` }]}>
+                  <View style={[styles.recipeDecisionIcon, { backgroundColor: decision.tone }]}>
+                    <Ionicons name={decision.icon} size={16} color="#FFF" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.recipeDecisionTitle, { color: colors.text }]}>{decision.title}</Text>
+                    <Text style={[styles.recipeDecisionText, { color: colors.textSecondary }]}>
+                      {decision.text}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Health Overview in Card */}
+                {recipe.health_score !== undefined && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, marginTop: spacing.xs }}>
+                    <View style={{ 
+                      backgroundColor: Number(recipe.health_score) >= 80 ? `${colors.success}15` : Number(recipe.health_score) >= 50 ? '#FFCC0015' : `${colors.error}15`, 
+                      paddingHorizontal: 10, 
+                      paddingVertical: 6, 
+                      borderRadius: 8, 
+                      marginRight: 10, 
+                      flexDirection: 'row', 
+                      alignItems: 'center' 
+                    }}>
+                      <Ionicons 
+                        name="shield-checkmark" 
+                        size={14} 
+                        color={Number(recipe.health_score) >= 80 ? colors.success : Number(recipe.health_score) >= 50 ? '#FFCC00' : colors.error} 
+                        style={{ marginRight: 4 }} 
+                      />
+                      <Text style={{ 
+                        color: Number(recipe.health_score) >= 80 ? colors.success : Number(recipe.health_score) >= 50 ? '#FFCC00' : colors.error, 
+                        fontWeight: 'bold', 
+                        fontSize: 12 
+                      }}>
+                        Độ an toàn: {recipe.health_score}%
+                      </Text>
+                    </View>
+                    {Array.isArray(recipe.health_benefits) && recipe.health_benefits.length > 0 && (
+                      <Text style={[typography.caption, { color: colors.success, flex: 1, fontWeight: '500' }]} numberOfLines={1}>
+                        {recipe.health_benefits[0]}
+                      </Text>
+                    )}
+                  </View>
+                )}
+
+                {/* Khối Cảnh báo (màu vàng) */}
+                {!!(recipe.health_warning || (Array.isArray(recipe.health_warnings) && recipe.health_warnings.length > 0)) && (
+                  <View style={[styles.warningBox, { backgroundColor: 'rgba(255, 149, 0, 0.1)', borderColor: 'rgba(255, 149, 0, 0.3)', borderWidth: 1, borderRadius: 12, padding: 12 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                      <Ionicons name="warning" size={16} color="#FF9500" />
+                      <Text style={{ color: '#FF9500', fontWeight: 'bold', marginLeft: 6, fontSize: 13 }}>Lưu ý sức khỏe</Text>
+                    </View>
+                    <View>
+                      {!!recipe.health_warning && <Text style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>{recipe.health_warning}</Text>}
+                      {Array.isArray(recipe.health_warnings) && recipe.health_warnings.map((w, i) => (
+                        <Text key={i} style={[typography.caption, { color: colors.textSecondary, lineHeight: 20 }]}>• {w}</Text>
+                      ))}
+                    </View>
                   </View>
                 )}
 
                 {/* 1. Nút Xem công thức */}
-                <TouchableOpacity 
+                <AnimatedButton 
+                  activeOpacity={0.7}
                   style={[styles.viewRecipeBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]} 
                   onPress={() => setSelectedRecipe(recipe)}
                 >
                   <Text style={[styles.viewRecipeText, typography.h3, { color: '#FFF' }]}>Xem công thức</Text>
                   <Ionicons name="chevron-forward" size={18} color="#FFF" style={{ marginLeft: 4 }} />
-                </TouchableOpacity>
+                </AnimatedButton>
               </View>
             </View>
-            ))
+            );
+            })
           )}
         </View>
       </Animated.ScrollView>
@@ -410,9 +613,9 @@ export default function AIResultScreen({ route, navigation }: Props) {
       <Modal visible={!!selectedRecipe} animationType="slide" transparent={false}>
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <TouchableOpacity onPress={() => setSelectedRecipe(null)} style={styles.closeBtn}>
+            <AnimatedButton activeOpacity={0.7} onPress={() => setSelectedRecipe(null)} style={styles.closeBtn}>
               <Ionicons name="close" size={28} color={colors.text} />
-            </TouchableOpacity>
+            </AnimatedButton>
             <Text style={[typography.h3, { color: colors.text, flex: 1, textAlign: 'center', marginRight: 40 }]}>{selectedRecipe?.title}</Text>
           </View>
           
@@ -425,15 +628,13 @@ export default function AIResultScreen({ route, navigation }: Props) {
               style={styles.imageGallery}
             >
               {[
-                selectedRecipe?.imageUrl,
-                `https://source.unsplash.com/featured/800x600?${encodeURIComponent(selectedRecipe?.title || '')},dish`,
-                `https://source.unsplash.com/featured/800x600?${encodeURIComponent(selectedRecipe?.title || '')},cooking`,
-                `https://source.unsplash.com/featured/800x600?${encodeURIComponent(selectedRecipe?.title || '')},delicious`
-              ].map((uri, idx) => (
+                { type: 'real', q: selectedRecipe?.title },
+                { type: 'real', q: `${selectedRecipe?.title} plating` }
+              ].map((img, idx) => (
                 <View key={idx} style={styles.galleryItem}>
-                  <SafeImage uri={uri} style={styles.galleryImage} />
+                  <RealImage query={img.q!} style={styles.galleryImage} />
                   <View style={styles.imageBadge}>
-                    <Text style={styles.imageBadgeText}>{idx + 1}/4 Ảnh</Text>
+                    <Text style={styles.imageBadgeText}>{idx + 1}/2 Ảnh</Text>
                   </View>
                 </View>
               ))}
@@ -443,13 +644,14 @@ export default function AIResultScreen({ route, navigation }: Props) {
             
             {/* Embedded YouTube Section */}
             {!showVideo ? (
-              <TouchableOpacity 
+              <AnimatedButton 
+                activeOpacity={0.7}
                 style={[styles.youtubeBtn, { backgroundColor: '#FF0000' }]}
                 onPress={() => setShowVideo(true)}
               >
                 <Ionicons name="logo-youtube" size={20} color="#FFF" />
                 <Text style={[typography.h3, { color: '#FFF', marginLeft: 10 }]}>Xem Video Hướng Dẫn</Text>
-              </TouchableOpacity>
+              </AnimatedButton>
             ) : (
               <View style={styles.videoWrapper}>
                 <View style={styles.videoHeader}>
@@ -466,50 +668,82 @@ export default function AIResultScreen({ route, navigation }: Props) {
               </View>
             )}
 
-            {/* New: Nutritional Insights */}
-            <View style={[styles.nutritionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: 'bold', marginBottom: 12 }]}>THÔNG TIN DINH DƯỠNG (ƯỚC TÍNH)</Text>
-              <View style={styles.nutritionRow}>
-                <View style={styles.nutriItem}>
-                  <Text style={[typography.h3, { color: colors.primary }]}>25g</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Protein</Text>
+            {/* Nutritional Insights */}
+            {selectedRecipe?.nutrition_detail && typeof selectedRecipe.nutrition_detail === 'object' && Object.keys(selectedRecipe.nutrition_detail).length > 0 && (
+              <View style={[styles.nutritionCard, { backgroundColor: colors.card, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3, borderWidth: 0, marginBottom: 20 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                  <View style={{ backgroundColor: `${colors.primary}15`, width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' }}>
+                    <Ionicons name="analytics" size={18} color={colors.primary} />
+                  </View>
+                  <Text style={[typography.h3, { color: colors.text, marginLeft: 10 }]}>Giá trị dinh dưỡng</Text>
                 </View>
-                <View style={[styles.nutriDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.nutriItem}>
-                  <Text style={[typography.h3, { color: colors.secondary }]}>45g</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Carbs</Text>
-                </View>
-                <View style={[styles.nutriDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.nutriItem}>
-                  <Text style={[typography.h3, { color: colors.error }]}>12g</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Chất béo</Text>
+                
+                <View style={[styles.nutritionRow, { backgroundColor: `${colors.background}`, padding: 16, borderRadius: 16 }]}>
+                  <View style={styles.nutriItem}>
+                    <Text style={[typography.h2, { color: colors.primary }]}>{selectedRecipe.nutrition_detail.protein || '-'}</Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Protein</Text>
+                  </View>
+                  <View style={[styles.nutriDivider, { backgroundColor: colors.border, height: 40 }]} />
+                  <View style={styles.nutriItem}>
+                    <Text style={[typography.h2, { color: colors.secondary }]}>{selectedRecipe.nutrition_detail.carbs || '-'}</Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Carbs</Text>
+                  </View>
+                  <View style={[styles.nutriDivider, { backgroundColor: colors.border, height: 40 }]} />
+                  <View style={styles.nutriItem}>
+                    <Text style={[typography.h2, { color: '#FF9500' }]}>{selectedRecipe.nutrition_detail.fat || '-'}</Text>
+                    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4 }]}>Chất béo</Text>
+                  </View>
                 </View>
               </View>
-            </View>
+            )}
 
-            <Text style={[styles.subTitle, typography.h2, { color: colors.text, marginBottom: spacing.md }]}>Thành phần nguyên liệu:</Text>
+            {/* Substitutions */}
+            {Array.isArray(selectedRecipe?.substitutions) && selectedRecipe.substitutions.length > 0 && (
+              <View style={[styles.warningBox, { backgroundColor: `${colors.success}10`, borderColor: `${colors.success}30`, marginTop: 0, marginBottom: 24, padding: 16, borderRadius: 16, borderWidth: 1 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                  <View style={{ backgroundColor: `${colors.success}20`, width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                    <Ionicons name="swap-horizontal" size={18} color={colors.success} />
+                  </View>
+                  <Text style={[typography.h3, { color: colors.success }]}>Gợi ý thay thế nguyên liệu</Text>
+                </View>
+                
+                <View style={{ gap: 12, paddingLeft: 42 }}>
+                  {selectedRecipe.substitutions.map((sub, i) => (
+                    <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success, marginTop: 8, marginRight: 8 }} />
+                      <Text style={[typography.body, { color: colors.text, flex: 1, lineHeight: 22 }]}>
+                        Dùng <Text style={{ fontWeight: 'bold', color: colors.success }}>{sub?.replacement}</Text> thay cho <Text style={{ fontWeight: 'bold' }}>{sub?.original}</Text> ({sub?.reason?.toLowerCase()})
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            <Text style={[styles.subTitle, typography.h2, { color: colors.text, marginBottom: spacing.md }]}>Danh sách cần chuẩn bị</Text>
             
-            <TouchableOpacity 
+            <AnimatedButton 
+              activeOpacity={0.7}
               style={[styles.addToCartAllBtn, { borderColor: colors.primary }]}
               onPress={() => selectedRecipe && addToShoppingList(selectedRecipe)}
             >
               <Ionicons name="cart" size={18} color={colors.primary} />
-              <Text style={[typography.caption, { color: colors.primary, fontWeight: 'bold', marginLeft: 8 }]}>THÊM TẤT CẢ VÀO GIỎ HÀNG</Text>
-            </TouchableOpacity>
+              <Text style={[typography.caption, { color: colors.primary, fontWeight: 'bold', marginLeft: 8 }]}>THÊM VÀO DANH SÁCH MUA</Text>
+            </AnimatedButton>
 
             {selectedRecipe?.ingredients.map((ing, i) => {
               const isChecked = checkedIngredients[`${selectedRecipe.title}-${i}`];
               return (
-                <TouchableOpacity 
+                <AnimatedButton 
+                  activeOpacity={0.7}
                   key={i} 
                   style={[styles.ingredientCard, { backgroundColor: colors.card, borderColor: colors.border }]} 
                   onPress={() => toggleIngredient(selectedRecipe.title, i)}
                 >
-                  <SafeImage 
-                    uri={`https://source.unsplash.com/featured/100x100?${encodeURIComponent(ing.split(' ')[ing.split(' ').length-1])},food`} 
-                    style={styles.ingredientThumb} 
-                  />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
+                  <View style={[styles.ingredientThumb, { backgroundColor: `${colors.primary}15`, justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="nutrition" size={24} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 16 }}>
                     <Text style={[
                       styles.listItemText, 
                       typography.body, 
@@ -521,19 +755,31 @@ export default function AIResultScreen({ route, navigation }: Props) {
                     ]}>
                       {ing}
                     </Text>
+                    {!isChecked && (
+                      <AnimatedButton onPress={() => suggestSubstitutions(ing)}>
+                        <Text style={{ color: colors.primary, fontSize: 11, marginTop: 4, fontWeight: 'bold' }}>
+                          Thay thế nguyên liệu
+                        </Text>
+                      </AnimatedButton>
+                    )}
                   </View>
                   <Ionicons 
                     name={isChecked ? "checkmark-circle" : "add-circle-outline"} 
                     size={24} 
                     color={isChecked ? colors.success : colors.primary} 
                   />
-                </TouchableOpacity>
+                </AnimatedButton>
               );
             })}
 
             <Text style={[styles.subTitle, typography.h2, { color: colors.text, marginTop: spacing.xl, marginBottom: spacing.md }]}>Các bước thực hiện:</Text>
             
-            {(Array.isArray(selectedRecipe?.instructions) ? selectedRecipe?.instructions : selectedRecipe?.instructions.split(/Bước \d+:/).filter(Boolean).map(s => s.trim()))?.map((inst, i) => (
+            {(() => {
+              const instructions = selectedRecipe?.instructions;
+              const parsedSteps = Array.isArray(instructions) 
+                ? instructions 
+                : (typeof instructions === 'string' ? instructions.split(/Bước \d+:/).filter(Boolean).map(s => s.trim()) : []);
+              return parsedSteps.map((inst, i) => (
               <View key={i} style={[styles.stepCard, { backgroundColor: colors.card }]}>
                 <View style={styles.stepHeaderRow}>
                   <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
@@ -541,13 +787,15 @@ export default function AIResultScreen({ route, navigation }: Props) {
                   </View>
                   <Text style={[typography.h3, { color: colors.text, marginLeft: 8 }]}>Bước {i + 1}</Text>
                 </View>
-                <SafeImage 
-                  uri={`https://source.unsplash.com/featured/800x450?cooking,kitchen,step,${i}`} 
+                <RealImage 
+                  query={`${selectedRecipe?.title} ${inst.substring(0, 30)}`}
+                  isStep={true}
                   style={styles.stepImage} 
                 />
                 <Text style={[styles.stepText, typography.body, { color: colors.text, marginTop: 12 }]}>{inst}</Text>
               </View>
-            ))}
+            ));
+            })()}
 
             {selectedRecipe?.tips && (
               <View style={[styles.tipBox, { backgroundColor: `${colors.primary}10`, marginTop: spacing.xl, marginBottom: 100 }]}>
@@ -563,31 +811,59 @@ export default function AIResultScreen({ route, navigation }: Props) {
 
           {/* Sticky Bottom Bar for Start Cooking */}
           <View style={[styles.stickyBottomBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-            <TouchableOpacity 
-              style={[styles.startCookingBtn, { backgroundColor: colors.primary }]}
+            <AnimatedButton 
+              activeOpacity={0.8}
+              style={styles.startCookingBtnWrapper}
               onPress={() => {
                 if (selectedRecipe) {
-                  const steps = Array.isArray(selectedRecipe.instructions) 
-                    ? selectedRecipe.instructions 
-                    : selectedRecipe.instructions.split(/Bước \d+:/).filter(Boolean).map(s => s.trim());
+                  const rawInstructions = selectedRecipe.instructions;
+                  let steps: string[] = [];
+                  if (Array.isArray(rawInstructions)) {
+                    steps = rawInstructions;
+                  } else if (typeof rawInstructions === 'string') {
+                    const splitRegex = /(?:Bước|Step|B|S)?\s*\d+[:.]|(?:\r?\n|^)\s*[-*•]\s*/gi;
+                    const parts = rawInstructions.split(splitRegex).filter(s => s.trim().length > 0);
+                    if (parts.length > 1) {
+                      steps = parts.map(s => s.trim());
+                    } else {
+                      const lines = rawInstructions.split(/\r?\n/).filter(s => s.trim().length > 5);
+                      if (lines.length > 1) {
+                        steps = lines.map(s => s.trim().replace(/^[-*•\d+.]\s*/, ''));
+                      } else {
+                        const sentences = sentencesRegex.exec(rawInstructions) ? rawInstructions.split(/[.!?](?:\s+|$)/).filter(s => s.trim().length > 5) : [rawInstructions.trim()];
+                        steps = sentences.map(s => s.trim());
+                      }
+                    }
+                  }
                   
                   setSelectedRecipe(null);
-                  navigation.navigate('CookingMode', { 
+                  navigation.navigate('PrepChecklist', { 
                     steps: steps, 
-                    dishName: selectedRecipe.title 
+                    dishName: selectedRecipe.title,
+                    ingredients: selectedRecipe.ingredients,
+                    tips: selectedRecipe.tips,
                   });
                 }
               }}
             >
-              <Ionicons name="restaurant" size={20} color="#FFF" />
-              <Text style={[typography.h3, { color: '#FFF', marginLeft: 12 }]}>BẮT ĐẦU NẤU NGAY</Text>
-            </TouchableOpacity>
+              <LinearGradient
+                colors={[colors.primary, `${colors.primary}CC`]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.startCookingBtn}
+              >
+                <View style={styles.startCookingIconWrapper}>
+                  <Ionicons name="restaurant" size={16} color={colors.primary} />
+                </View>
+                <Text style={[typography.h3, { color: '#FFF', marginLeft: 12 }]}>BẮT ĐẦU CHẾ ĐỘ NẤU</Text>
+              </LinearGradient>
+            </AnimatedButton>
           </View>
         </SafeAreaView>
       </Modal>
 
       {/* Global Custom Toast */}
-      {toast && (
+      {!!toast && (
         <Animated.View 
           style={[
             styles.toastContainer, 
@@ -620,20 +896,48 @@ const styles = StyleSheet.create({
   loadingText: { textAlign: 'center' },
   header: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden' },
   headerImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  floatingBackBtn: { 
+    position: 'absolute', top: 50, left: 20, zIndex: 20,
+    width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center', alignItems: 'center',
+  },
   content: {},
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   iconCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   sectionTitle: { fontWeight: '800' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  tagText: { fontWeight: 'bold', fontSize: 13 },
   recipeCard: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 8, overflow: 'hidden' },
   recipeImage: { width: '100%', height: 200, resizeMode: 'cover' },
   bookmarkBtn: { position: 'absolute', top: 15, right: 15, backgroundColor: 'rgba(0,0,0,0.3)', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   recipeName: { fontWeight: '900' },
   metaDataRow: { flexDirection: 'row', gap: 16 },
   metaItem: { flexDirection: 'row', alignItems: 'center' },
-  warningBox: { flexDirection: 'row', padding: 12, borderWidth: 1, borderRadius: 12, marginBottom: 8 },
+  recipeDecisionBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  recipeDecisionIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  recipeDecisionTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  recipeDecisionText: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  warningBox: { flexDirection: 'column', padding: 12, borderWidth: 1, borderRadius: 12, marginBottom: 8 },
   addToCartAllBtn: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -643,17 +947,27 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: 'rgba(255, 149, 0, 0.15)',
   },
+  startCookingBtnWrapper: {
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
+  },
   startCookingBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 18,
     borderRadius: 50,
-    shadowColor: '#FF9500',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
+  },
+  startCookingIconWrapper: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   stickyBottomBar: {
     position: 'absolute',
@@ -798,6 +1112,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderStyle: 'dashed',
     borderWidth: 1,
-    borderColor: '#CCC'
   },
 });
+
+

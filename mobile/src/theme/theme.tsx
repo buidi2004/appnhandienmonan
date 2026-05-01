@@ -3,33 +3,37 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const lightColors = {
-  primary: '#F09035', // Warm Orange/Yellow
-  primaryDark: '#D47D2C',
-  secondary: '#FF8C42', 
-  background: '#FDFCF0', // Creamy White
+  primary: '#2F7D57',
+  primaryDark: '#245E44',
+  secondary: '#C4513A',
+  accent: '#2E5B9A',
+  warning: '#B86B00',
+  background: '#F6F7F2',
   card: '#FFFFFF',
-  cardSecondary: '#F3EFE9', // Light gray/brown for cards
-  text: '#2C2721', // Dark Brown Text
-  textSecondary: '#8B7B6B',
-  border: '#E2DCD3',
-  error: '#EF4444',
-  success: '#2ECC71',
-  iconBg: '#F3EFE9',
+  cardSecondary: '#EEF1EA',
+  text: '#17231C',
+  textSecondary: '#66736B',
+  border: '#DDE4DA',
+  error: '#D64545',
+  success: '#2F9E67',
+  iconBg: '#E9EFE8',
 };
 
 const darkColors = {
-  primary: '#E6B971', // Yellowish Gold from the image
-  primaryDark: '#C9A05C',
-  secondary: '#E6B971', 
-  background: '#13110E', // Very dark brown/black
-  card: '#1A1714', // Slightly lighter dark brown
-  cardSecondary: '#25211B', // For inner cards
-  text: '#FDFCF0', // Creamy White Text
-  textSecondary: '#A99B8B',
-  border: '#2C2721',
-  error: '#EF4444',
-  success: '#2ECC71',
-  iconBg: '#1C1916', // Dark background for icons
+  primary: '#6FD19D',
+  primaryDark: '#4CAC78',
+  secondary: '#F07A62',
+  accent: '#79A7EA',
+  warning: '#E2A84B',
+  background: '#0F1512',
+  card: '#171F1A',
+  cardSecondary: '#202A24',
+  text: '#F5F7F2',
+  textSecondary: '#A7B3AA',
+  border: '#2A362F',
+  error: '#FF6B6B',
+  success: '#63D494',
+  iconBg: '#1D2822',
 };
 
 export const typography = {
@@ -71,10 +75,10 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
+  sm: 6,
+  md: 8,
+  lg: 12,
+  xl: 16,
   round: 9999,
 };
 
@@ -88,8 +92,10 @@ export const theme = {
 type ThemeContextType = {
   isDark: boolean;
   isSystem: boolean;
-  setManualTheme: (isDark: boolean) => void;
+  language: string;
+  setManualTheme: (mode: 'dark' | 'light') => void;
   setSystemTheme: () => void;
+  setLanguage: (lang: string) => void;
   colors: typeof lightColors;
   spacing: typeof spacing;
   typography: typeof typography;
@@ -99,12 +105,14 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType>({
   isDark: false,
   isSystem: true,
+  language: 'vi',
   setManualTheme: () => {},
   setSystemTheme: () => {},
+  setLanguage: () => {},
   colors: lightColors,
-  spacing,
-  typography,
-  borderRadius,
+  spacing: spacing,
+  typography: typography,
+  borderRadius: borderRadius,
 });
 
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
@@ -112,55 +120,69 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children 
   const [isSystem, setIsSystem] = useState(true);
   const [isDark, setIsDark] = useState(systemScheme === 'dark');
 
-  useEffect(() => {
-    loadThemePreferences();
-  }, []);
+  const [language, setLanguageState] = useState('vi');
 
   useEffect(() => {
-    if (isSystem) {
-      setIsDark(systemScheme === 'dark');
-    }
-  }, [systemScheme, isSystem]);
+    const loadSettings = async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem('themeMode');
+        const savedLang = await AsyncStorage.getItem('appLanguage');
+        
+        if (savedLang) setLanguageState(savedLang);
 
-  const loadThemePreferences = async () => {
-    try {
-      const storedTheme = await AsyncStorage.getItem('appThemePreference');
-      if (storedTheme === 'dark') {
-        setIsSystem(false);
-        setIsDark(true);
-      } else if (storedTheme === 'light') {
-        setIsSystem(false);
-        setIsDark(false);
-      } else {
-        setIsSystem(true);
+        if (savedTheme === 'dark') {
+          setIsDark(true);
+          setIsSystem(false);
+        } else if (savedTheme === 'light') {
+          setIsDark(false);
+          setIsSystem(false);
+        } else {
+          setIsSystem(true);
+          setIsDark(systemScheme === 'dark');
+        }
+      } catch (e) {
+        console.error('Failed to load settings', e);
       }
-    } catch (e) {}
-  };
+    };
+    loadSettings();
+  }, [systemScheme]);
 
-  const setManualTheme = async (dark: boolean) => {
-    setIsSystem(false);
+  const setManualTheme = async (mode: 'dark' | 'light') => {
+    const dark = mode === 'dark';
     setIsDark(dark);
-    await AsyncStorage.setItem('appThemePreference', dark ? 'dark' : 'light');
+    setIsSystem(false);
+    await AsyncStorage.setItem('themeMode', mode);
   };
 
   const setSystemTheme = async () => {
     setIsSystem(true);
     setIsDark(systemScheme === 'dark');
-    await AsyncStorage.removeItem('appThemePreference');
+    await AsyncStorage.removeItem('themeMode');
   };
 
-  const value = {
-    isDark,
-    isSystem,
-    setManualTheme,
-    setSystemTheme,
-    colors: isDark ? darkColors : lightColors,
-    spacing,
-    typography,
-    borderRadius,
+  const setLanguage = async (lang: string) => {
+    setLanguageState(lang);
+    await AsyncStorage.setItem('appLanguage', lang);
   };
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  const currentColors = isDark ? darkColors : lightColors;
+
+  return (
+    <ThemeContext.Provider value={{ 
+      isDark, 
+      isSystem, 
+      language,
+      setManualTheme, 
+      setSystemTheme, 
+      setLanguage,
+      colors: currentColors, 
+      spacing, 
+      typography, 
+      borderRadius 
+    }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
 export function useAppTheme() {

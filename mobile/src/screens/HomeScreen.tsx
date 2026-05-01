@@ -1,26 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Image, 
-  FlatList, 
-  SafeAreaView, 
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   Dimensions,
-  ImageBackground,
   TextInput,
-  Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '../theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { requestNotificationPermissions, scheduleDailyNotifications } from '../services/notificationService';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAppTheme } from '../theme/theme';
 import { RootStackParamList, TabParamList } from '../../App';
+import { SafeImage } from '../components/RealImage';
+import AnimatedButton from '../components/AnimatedButton';
+import EmptyState from '../components/EmptyState';
 
 type HomeScreenProps = BottomTabScreenProps<TabParamList, 'Home'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -28,324 +25,315 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const { width } = Dimensions.get('window');
 const DEFAULT_FOOD_IMAGE = 'https://images.unsplash.com/photo-1495195129352-aec325b55b65?q=80&w=600&auto=format&fit=crop';
 
+const pantrySnapshot = [
+  { label: 'Đề xuất', value: '5', helper: 'món đang hợp bối cảnh hôm nay', icon: 'sparkles-outline', tone: 'success' },
+  { label: 'Ít phải mua', value: '3', helper: 'món chỉ thiếu vài nguyên liệu', icon: 'basket-outline', tone: 'accent' },
+  { label: 'Nhanh nhất', value: '15p', helper: 'món gọn cho lúc ít thời gian', icon: 'timer-outline', tone: 'warning' },
+];
+
 const popularRecipes = [
-  { id: '1', name: 'Phở bò gia truyền', time: '60 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Món nước' },
-  { id: '2', name: 'Bánh mì Sài Gòn', time: '15 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1600454021970-351feb4a5149?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
-  { id: '3', name: 'Cơm tấm Long Xuyên', time: '40 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1567034680077-d64e43f1f727?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Tất cả' },
-  { id: '4', name: 'Bún chả Hà Nội', time: '45 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1562967914-608f82629710?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
-  { id: '5', name: 'Gỏi cuốn tôm nhảy', time: '20 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1539136788836-3bc8513c1419?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Healthy' },
-  { id: '6', name: 'Lẩu Thái hải sản', time: '50 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Món nước' },
-  { id: '7', name: 'Bún bò Huế', time: '55 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1624538356391-7667232230da?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
-  { id: '8', name: 'Bánh xèo miền Tây', time: '35 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
-  { id: '9', name: 'Cà phê muối Hội An', time: '10 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
-  { id: '10', name: 'Pizza Hải Sản', time: '40 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Ăn nhanh' },
-  { id: '11', name: 'Burger Bò Wagyu', time: '25 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
-  { id: '12', name: 'Ramen Nhật Bản', time: '45 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
-  { id: '13', name: 'Dimsum Tôm', time: '30 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
-  { id: '14', name: 'Sườn Nướng BBQ', time: '50 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Đồ nướng' },
-  { id: '15', name: 'Pad Thái Tôm', time: '30 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
-  { id: '16', name: 'Tôm Hùm Bơ Tỏi', time: '45 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1559740038-76508d5119be?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Đồ nướng' },
+  {
+    id: '1',
+    name: 'Phở bò gia truyền',
+    time: '60 phút',
+    difficulty: 'Khó',
+    image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=600&auto=format&fit=crop',
+    category: 'Món nước',
+    match: 72,
+    uses: '4/7 nguyên liệu',
+    missing: 'xương bò, bánh phở, rau thơm',
+    description: 'Nước dùng thanh, hợp khi có nhiều thời gian chuẩn bị.',
+    instructions: 'Bước 1: Ninh xương bò cùng gừng nướng và hành tây nướng để lấy nước dùng ngọt. Bước 2: Nướng thơm hồi, quế, thảo quả rồi cho vào túi lọc. Bước 3: Nêm mắm, muối, đường phèn vừa vị. Bước 4: Chần bánh phở, xếp thịt bò thái mỏng và rau thơm. Bước 5: Chan nước dùng đang sôi để làm tái thịt.',
+    ingredients: ['Xương ống bò', 'Thịt bò phi lê', 'Bánh phở tươi', 'Quế, hồi, thảo quả', 'Hành lá', 'Ngò gai'],
+  },
+  {
+    id: '2',
+    name: 'Bánh mì Sài Gòn',
+    time: '15 phút',
+    difficulty: 'Dễ',
+    image: 'https://images.unsplash.com/photo-1600454021970-351feb4a5149?q=80&w=600&auto=format&fit=crop',
+    category: 'Ăn nhanh',
+    match: 91,
+    uses: '5/6 nguyên liệu',
+    missing: 'đồ chua',
+    description: 'Nhanh, gọn, hợp bữa sáng hoặc bữa xế.',
+    instructions: 'Bước 1: Nướng lại bánh mì cho vỏ giòn. Bước 2: Rạch bánh, phết pate và bơ. Bước 3: Xếp chả lụa, thịt nguội, dưa leo và ngò rí. Bước 4: Thêm đồ chua, nước tương và tương ớt vừa ăn.',
+    ingredients: ['Bánh mì', 'Pate gan', 'Chả lụa', 'Đồ chua', 'Bơ', 'Ngò rí'],
+  },
+  {
+    id: '3',
+    name: 'Cơm tấm Long Xuyên',
+    time: '40 phút',
+    difficulty: 'Vừa',
+    image: 'https://images.unsplash.com/photo-1567034680077-d64e43f1f727?q=80&w=600&auto=format&fit=crop',
+    category: 'Cơm nhà',
+    match: 84,
+    uses: '6/8 nguyên liệu',
+    missing: 'bì heo, đồ chua',
+    description: 'No lâu, đậm vị, hợp bữa trưa nhiều năng lượng.',
+    instructions: 'Bước 1: Hấp gạo tấm đến khi cơm tơi. Bước 2: Ướp sườn với tỏi, mật ong và nước mắm. Bước 3: Nướng sườn đến khi vàng cạnh. Bước 4: Làm chả trứng, mỡ hành và nước mắm chua ngọt. Bước 5: Bày cơm cùng sườn, chả, bì và đồ chua.',
+    ingredients: ['Gạo tấm', 'Sườn heo', 'Trứng', 'Bì heo', 'Mỡ hành', 'Nước mắm'],
+  },
+  {
+    id: '4',
+    name: 'Salad ức gà',
+    time: '15 phút',
+    difficulty: 'Dễ',
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=600&auto=format&fit=crop',
+    category: 'Healthy',
+    match: 88,
+    uses: '5/6 nguyên liệu',
+    missing: 'dầu olive',
+    description: 'Nhẹ bụng, nhiều đạm, phù hợp bữa tối nhanh.',
+    instructions: 'Bước 1: Áp chảo ức gà với muối tiêu. Bước 2: Rửa sạch xà lách, cà chua bi, dưa leo và bơ. Bước 3: Pha sốt dầu giấm với chanh và mật ong. Bước 4: Trộn nhẹ rau củ, gà và sốt.',
+    ingredients: ['Ức gà', 'Xà lách', 'Cà chua bi', 'Dưa leo', 'Bơ', 'Dầu olive'],
+  },
+  {
+    id: '5',
+    name: 'Canh chua cá',
+    time: '35 phút',
+    difficulty: 'Vừa',
+    image: 'https://images.unsplash.com/photo-1625937286074-9ca519d5d9df?q=80&w=600&auto=format&fit=crop',
+    category: 'Món nước',
+    match: 79,
+    uses: '6/8 nguyên liệu',
+    missing: 'bạc hà, me',
+    description: 'Vị chua dịu, dễ ăn, hợp bữa cơm gia đình.',
+    instructions: 'Bước 1: Sơ chế cá và rau nấu canh. Bước 2: Phi thơm hành, cho cà chua vào xào. Bước 3: Thêm nước, me và nêm vị chua ngọt. Bước 4: Cho cá vào nấu chín rồi thêm rau, ngò gai và ớt.',
+    ingredients: ['Cá', 'Cà chua', 'Thơm', 'Đậu bắp', 'Bạc hà', 'Me', 'Ngò gai'],
+  },
 ];
 
-const trendingRecipes = [
-  { id: '101', name: 'Mì Ý sốt bò băm', time: '30 phút', image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=600&auto=format&fit=crop', category: 'Ăn nhanh' },
-  { id: '102', name: 'Salad ức gà', time: '15 phút', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=600&auto=format&fit=crop', category: 'Healthy' },
-  { id: '103', name: 'Sushi Nhật Bản', time: '45 phút', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=600&auto=format&fit=crop', category: 'Healthy' },
-  { id: '104', name: 'Steak bò Mỹ', time: '25 phút', image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop', category: 'Đồ nướng' },
-];
-
-const categories = ['Tất cả', 'Món nước', 'Healthy', 'Đồ nướng', 'Ăn nhanh', 'Món chay'];
+const categories = ['Tất cả', 'Cơm nhà', 'Món nước', 'Healthy', 'Ăn nhanh'];
 
 export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProps) {
   const navigation = useNavigation<NavigationProp>();
-  const { colors, typography, spacing, borderRadius } = useAppTheme();
+  const { colors, spacing, borderRadius } = useAppTheme();
   const [greeting, setGreeting] = useState('');
   const [activeCategory, setActiveCategory] = useState('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
-  const scrollRef = React.useRef<ScrollView>(null);
 
   useEffect(() => {
-    const checkNotifications = async () => {
-      const hasPermission = await requestNotificationPermissions();
-      if (!hasPermission) {
-        Alert.alert(
-          'Thông báo', 
-          'Ứng dụng cần quyền thông báo để gợi ý món ăn hàng ngày cho bạn. Vui lòng cấp quyền trong Cài đặt.',
-          [{ text: 'Đã hiểu' }]
-        );
-      }
-    };
-    checkNotifications();
-
     const hour = new Date().getHours();
-    if (hour < 11) setGreeting('Sáng nay se lạnh, làm tô phở nóng nhé Dĩ ơi!');
-    else if (hour < 14) setGreeting('Trưa nắng gắt, Dĩ ăn gì cho mát mẻ nào?');
-    else if (hour < 18) setGreeting('Chiều tà rồi, Dĩ định nấu món gì đãi cả nhà?');
-    else setGreeting('Tối muộn rồi, làm món gì nhẹ bụng thôi Dĩ nhé!');
+    if (hour < 11) setGreeting('Bữa sáng nên nhanh, ấm và ít thao tác.');
+    else if (hour < 14) setGreeting('Bữa trưa cần đủ năng lượng nhưng không quá nặng.');
+    else if (hour < 18) setGreeting('Chuẩn bị bữa tối từ những gì còn trong bếp.');
+    else setGreeting('Tối rồi, ưu tiên món nhẹ và dọn bếp nhanh.');
   }, []);
 
-  const filteredRecipes = popularRecipes.filter(r => {
-    const matchCategory = activeCategory === 'Tất cả' || r.category === activeCategory;
-    const matchSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
-  });
+  const filteredRecipes = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return popularRecipes.filter((recipe) => {
+      const matchCategory = activeCategory === 'Tất cả' || recipe.category === activeCategory;
+      const matchSearch = !query || recipe.name.toLowerCase().includes(query);
+      return matchCategory && matchSearch;
+    });
+  }, [activeCategory, searchQuery]);
 
-  const handleExploreNow = () => {
-    // Cuộn xuống phần Gợi ý từ đầu bếp
-    scrollRef.current?.scrollTo({ y: 400, animated: true });
+  const openRecipe = (recipe: typeof popularRecipes[number]) => {
+    navigation.navigate('AIResult', {
+      initialRecipe: {
+        title: recipe.name,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        missing_ingredients: recipe.missing.split(',').map(item => item.trim()).filter(Boolean),
+        instructions: recipe.instructions,
+        prep_time: recipe.time,
+        difficulty: recipe.difficulty,
+        calories: recipe.category === 'Healthy' ? '320 kcal' : '420 kcal',
+        image: recipe.image,
+        imageUrl: recipe.image,
+      },
+    });
   };
 
-  const renderBentoItem = (item: any) => {
-    const isLarge = item.size === 'large';
-    const isMedium = item.size === 'medium';
-    const usableWidth = width - 52; // 20 padding each side + 12 gap
-    const itemWidth = isLarge ? usableWidth * 0.67 : (isMedium ? usableWidth * 0.485 : usableWidth * 0.30);
-    const itemHeight = isLarge ? 240 : 200;
-
-    return (
-      <TouchableOpacity 
-        key={item.id}
-        activeOpacity={0.9}
-        style={[styles.bentoCard, { width: itemWidth, height: itemHeight, borderRadius: 24, backgroundColor: colors.card }]}
-        onPress={() => navigation.navigate('AIResult', {
-          initialRecipe: {
-            title: item.name,
-            description: `Một trong những món ${item.category} được yêu thích nhất tại Việt Nam.`,
-            ingredients: ['Nguyên liệu chính', 'Gia vị đặc trưng', 'Rau thơm'],
-            instructions: 'Bước 1: Sơ chế sạch sẽ. Bước 2: Tẩm ướp gia vị. Bước 3: Chế biến theo công thức truyền thống.',
-            prep_time: item.time,
-            difficulty: item.difficulty || 'Vừa',
-            calories: '400 kcal',
-            image: item.image,
-            imageUrl: item.image
-          }
-        })}
-      >
-        <Image 
-          source={{ uri: item.image || DEFAULT_FOOD_IMAGE }} 
-          style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
-          resizeMode="cover"
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
-          style={styles.bentoGradient}
-        >
-          <Text style={[styles.bentoName, { color: '#FFF' }]} numberOfLines={2}>{item.name}</Text>
-          <View style={styles.bentoMeta}>
-            <Ionicons name="time-outline" size={12} color="#FFF" />
-            <Text style={[styles.bentoTime, { color: '#FFF' }]}>{item.time}</Text>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    );
+  const toneColor = (tone: string) => {
+    if (tone === 'success') return colors.success;
+    if (tone === 'accent') return colors.accent;
+    if (tone === 'warning') return colors.warning;
+    return colors.primary;
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView 
-        ref={scrollRef}
-        style={styles.container} 
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header Section */}
-        <View style={[styles.mainHeader, { paddingHorizontal: spacing.lg, paddingTop: spacing.md }]}>
-          <View>
-            <Text style={[typography.h2, { color: colors.text }]}>Khám phá</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Món ngon mỗi ngày cho gia đình</Text>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.md }]}>
+          <View style={styles.headerCopy}>
+            <Text style={[styles.kicker, { color: colors.primary }]}>BẾP HÔM NAY</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Nấu từ những gì bạn đang có</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{greeting}</Text>
           </View>
-          <TouchableOpacity 
-            style={[styles.headerIconButton, { backgroundColor: colors.card }]}
+          <AnimatedButton
+            activeOpacity={0.7}
+            style={[styles.cartButton, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => navigation.navigate('ShoppingList')}
           >
-            <Ionicons name="cart-outline" size={24} color={colors.primary} />
-            {/* Có thể thêm badge ở đây nếu muốn */}
-          </TouchableOpacity>
+            <Ionicons name="cart-outline" size={22} color={colors.primary} />
+          </AnimatedButton>
         </View>
 
-        {/* Search Bar - Editorial Style */}
-        <View style={[styles.searchSection, { paddingHorizontal: spacing.lg, marginTop: spacing.md }]}>
-          <View style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: 30 }]}>
-            <Ionicons name="search" size={20} color={colors.textSecondary} />
-            <TextInput 
-              placeholder="Tìm món ngon hôm nay..."
+        <View style={[styles.commandPanel, { marginHorizontal: spacing.lg, backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+          <View style={styles.searchRow}>
+            <Ionicons name="search" size={19} color={colors.textSecondary} />
+            <TextInput
+              placeholder="Tìm món, nguyên liệu hoặc kiểu bữa ăn"
               placeholderTextColor={colors.textSecondary}
               style={[styles.searchInput, { color: colors.text }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
-        </View>
-
-        {/* Hero Card Banner */}
-        <TouchableOpacity 
-          style={[styles.heroCard, { marginHorizontal: spacing.lg, marginTop: spacing.xl }]}
-          onPress={handleExploreNow}
-        >
-          <ImageBackground 
-            source={{ uri: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=800&auto=format&fit=crop' }}
-            style={styles.heroImage}
-            imageStyle={{ borderRadius: 32 }}
-          >
-            <LinearGradient
-              colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.7)']}
-              style={styles.heroGradient}
+          <View style={[styles.commandDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.primaryActions}>
+            <AnimatedButton
+              activeOpacity={0.75}
+              style={[styles.scanAction, { backgroundColor: colors.primary }]}
+              onPress={() => tabNavigation.navigate('Camera')}
             >
-              <View style={styles.heroContent}>
-                <Text style={styles.heroGreeting}>XIN CHÀO DĨ 👋</Text>
-                <Text style={styles.heroTitle}>{greeting}</Text>
-                <View style={[styles.heroBtn, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.heroBtnText}>Khám phá ngay</Text>
+              <Ionicons name="camera" size={21} color="#FFF" />
+              <Text style={styles.scanActionText}>Quét bếp</Text>
+            </AnimatedButton>
+            <AnimatedButton
+              activeOpacity={0.75}
+              style={[styles.typeAction, { borderColor: colors.border }]}
+              onPress={() => navigation.navigate('IngredientInput')}
+            >
+              <Ionicons name="create-outline" size={19} color={colors.primary} />
+              <Text style={[styles.typeActionText, { color: colors.text }]}>Nhập tay</Text>
+            </AnimatedButton>
+          </View>
+        </View>
+
+        <View style={[styles.snapshotRow, { paddingHorizontal: spacing.lg }]}>
+          {pantrySnapshot.map((item) => {
+            const color = toneColor(item.tone);
+            return (
+              <View key={item.label} style={[styles.snapshotCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: borderRadius.md }]}>
+                <View style={[styles.snapshotIcon, { backgroundColor: `${color}14` }]}>
+                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={18} color={color} />
                 </View>
+                <Text style={[styles.snapshotValue, { color: colors.text }]}>{item.value}</Text>
+                <Text style={[styles.snapshotLabel, { color: colors.text }]}>{item.label}</Text>
+                <Text style={[styles.snapshotHelper, { color: colors.textSecondary }]} numberOfLines={2}>{item.helper}</Text>
               </View>
-            </LinearGradient>
-          </ImageBackground>
-        </TouchableOpacity>
-
-        {/* Smart Fridge Inventory Card */}
-        <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.xl }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Tủ lạnh thông minh 🧊</Text>
+            );
+          })}
         </View>
-        <TouchableOpacity 
-          style={[styles.inventoryCard, { marginHorizontal: spacing.lg, backgroundColor: colors.card, borderRadius: 24 }]}
-          onPress={() => navigation.navigate('Inventory')}
-        >
-          <View style={styles.inventoryInfo}>
-            <Text style={[typography.h3, { color: colors.text }]}>Quản lý thực phẩm</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4 }]}>
-              Theo dõi hạn sử dụng để không bỏ phí thực phẩm nào nhé!
-            </Text>
-            <View style={[styles.inventoryBadge, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 12 }}>KIỂM TRA NGAY</Text>
-            </View>
-          </View>
-          <View style={[styles.inventoryIconBox, { backgroundColor: `${colors.primary}10` }]}>
-            <Ionicons name="snow" size={40} color={colors.primary} />
-          </View>
-        </TouchableOpacity>
 
-        {/* Meal Planner Card */}
-        <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.xl }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Kế hoạch ăn uống 📅</Text>
+        <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg }]}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Gợi ý hợp bếp</Text>
+            <Text style={[styles.sectionHint, { color: colors.textSecondary }]}>Ưu tiên món dùng được nhiều nguyên liệu sẵn có.</Text>
+          </View>
+          <AnimatedButton onPress={() => navigation.navigate('Inventory')} style={styles.textAction}>
+            <Text style={[styles.textActionLabel, { color: colors.primary }]}>Tủ bếp</Text>
+            <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+          </AnimatedButton>
         </View>
-        <TouchableOpacity 
-          style={[styles.plannerCard, { marginHorizontal: spacing.lg, backgroundColor: colors.card, borderRadius: 24 }]}
-          onPress={() => navigation.navigate('MealPlanner')}
-        >
-          <View style={[styles.plannerIconBox, { backgroundColor: '#5856D615' }]}>
-            <Ionicons name="calendar" size={32} color="#5856D6" />
-          </View>
-          <View style={styles.plannerInfo}>
-            <Text style={[typography.h3, { color: colors.text }]}>Thực đơn tuần này</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4 }]}>
-              Lên lịch bữa sáng, trưa, tối để ăn uống điều độ hơn.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.border} />
-        </TouchableOpacity>
 
-        {/* Category Pills - Horizontal Scroll */}
         <View style={styles.categorySection}>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.xl }}
+            contentContainerStyle={{ paddingHorizontal: spacing.lg }}
           >
-            {categories.map((cat, idx) => {
-              const isActive = activeCategory === cat;
+            {categories.map((category) => {
+              const selected = activeCategory === category;
               return (
-                <TouchableOpacity 
-                  key={idx}
-                  onPress={() => setActiveCategory(cat)}
+                <AnimatedButton
+                  key={category}
+                  activeOpacity={0.7}
+                  onPress={() => setActiveCategory(category)}
                   style={[
-                    styles.categoryPill, 
-                    { 
-                      backgroundColor: isActive ? colors.primary : 'transparent',
-                      borderColor: isActive ? colors.primary : '#E0E0E0',
-                      borderWidth: 1,
-                      marginRight: 10
-                    }
+                    styles.categoryPill,
+                    {
+                      backgroundColor: selected ? colors.primary : colors.card,
+                      borderColor: selected ? colors.primary : colors.border,
+                    },
                   ]}
                 >
-                  <Text style={[styles.categoryText, { color: isActive ? '#FFF' : colors.text, fontWeight: isActive ? 'bold' : '500' }]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
+                  <Text style={[styles.categoryText, { color: selected ? '#FFF' : colors.text }]}>{category}</Text>
+                </AnimatedButton>
               );
             })}
           </ScrollView>
         </View>
 
-        {/* Chef's Specials - Horizontal Scroll */}
-        <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.lg }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Gợi ý từ đầu bếp ✨</Text>
-          <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Danh sách gợi ý đầy đủ đang được cập nhật!')}>
-            <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Tất cả</Text>
-          </TouchableOpacity>
-        </View>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}
-        >
-          {trendingRecipes.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={styles.trendingCard}
-              onPress={() => navigation.navigate('AIResult', {
-                initialRecipe: {
-                  title: item.name,
-                  description: `Món ${item.name} thơm ngon, bổ dưỡng chuẩn vị nhà làm.`,
-                  ingredients: ['Nguyên liệu 1', 'Nguyên liệu 2', 'Gia vị'],
-                  instructions: 'Bước 1: Sơ chế nguyên liệu. Bước 2: Chế biến. Bước 3: Hoàn thành và thưởng thức.',
-                  prep_time: item.time,
-                  difficulty: 'Vừa',
-                  calories: '350 kcal',
-                  image: item.image,
-                  imageUrl: item.image
-                }
-              })}
-            >
-              <Image source={{ uri: item.image }} style={styles.trendingImage} resizeMode="cover" />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.8)']}
-                style={styles.trendingGradient}
+        <View style={[styles.recipeList, { paddingHorizontal: spacing.lg }]}>
+          {filteredRecipes.length === 0 ? (
+            <EmptyState
+              icon="restaurant-outline"
+              title="Chưa có món phù hợp"
+              description="Hãy đổi từ khóa hoặc quét nguyên liệu để AI dựng gợi ý sát bếp hơn."
+              buttonText="Quét nguyên liệu"
+              onPress={() => tabNavigation.navigate('Camera')}
+              style={{ paddingHorizontal: 0 }}
+            />
+          ) : (
+            filteredRecipes.map((recipe, index) => (
+              <AnimatedButton
+                key={recipe.id}
+                activeOpacity={0.86}
+                style={[
+                  styles.recipeCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    borderRadius: borderRadius.md,
+                    marginTop: index === 0 ? 0 : 12,
+                  },
+                ]}
+                onPress={() => openRecipe(recipe)}
               >
-                <Text style={styles.trendingName}>{item.name}</Text>
-                <View style={styles.trendingMeta}>
-                  <Ionicons name="time-outline" size={12} color="#FFF" />
-                  <Text style={styles.trendingTime}>{item.time}</Text>
+                <View style={styles.recipeImageWrap}>
+                  <SafeImage uri={recipe.image || DEFAULT_FOOD_IMAGE} style={styles.recipeImage} />
+                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.68)']} style={styles.recipeImageShade}>
+                    <View style={styles.matchBadge}>
+                      <Ionicons name="sparkles" size={12} color="#FFF" />
+                      <Text style={styles.matchBadgeText}>{recipe.match}% hợp bếp</Text>
+                    </View>
+                  </LinearGradient>
                 </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Popular Bento Grid */}
-        <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.md }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Món ngon thịnh hành 🔥</Text>
-          <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Tính năng xem thêm đang được phát triển!')}>
-            <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Xem thêm</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.bentoGridContainer}>
-          {Array.from({ length: Math.ceil(filteredRecipes.length / 2) }).map((_, rowIndex) => (
-            <View key={rowIndex} style={[styles.bentoRow, rowIndex > 0 && { marginTop: 12 }]}>
-              {renderBentoItem(filteredRecipes[rowIndex * 2])}
-              {filteredRecipes[rowIndex * 2 + 1] && renderBentoItem(filteredRecipes[rowIndex * 2 + 1])}
-            </View>
-          ))}
-          {filteredRecipes.length === 0 && (
-            <View style={{ padding: 40, alignItems: 'center' }}>
-              <Ionicons name="restaurant-outline" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-              <Text style={{ color: colors.textSecondary, marginTop: 16, fontFamily: 'Poppins_400Regular' }}>
-                Chưa có món nào trong mục này...
-              </Text>
-            </View>
+                <View style={styles.recipeInfo}>
+                  <View style={styles.recipeTitleRow}>
+                    <Text style={[styles.recipeName, { color: colors.text }]} numberOfLines={2}>{recipe.name}</Text>
+                    <Ionicons name="chevron-forward" size={19} color={colors.textSecondary} />
+                  </View>
+                  <Text style={[styles.recipeDescription, { color: colors.textSecondary }]} numberOfLines={2}>{recipe.description}</Text>
+                  <View style={styles.recipeMetaRow}>
+                    <View style={[styles.metaChip, { backgroundColor: `${colors.primary}10` }]}>
+                      <Ionicons name="time-outline" size={13} color={colors.primary} />
+                      <Text style={[styles.metaText, { color: colors.primary }]}>{recipe.time}</Text>
+                    </View>
+                    <View style={[styles.metaChip, { backgroundColor: `${colors.accent}10` }]}>
+                      <Ionicons name="speedometer-outline" size={13} color={colors.accent} />
+                      <Text style={[styles.metaText, { color: colors.accent }]}>{recipe.difficulty}</Text>
+                    </View>
+                  </View>
+                  <View style={[styles.kitchenFit, { borderColor: colors.border }]}>
+                    <Text style={[styles.kitchenFitStrong, { color: colors.text }]}>{recipe.uses}</Text>
+                    <Text style={[styles.kitchenFitText, { color: colors.textSecondary }]} numberOfLines={1}>Thiếu: {recipe.missing}</Text>
+                  </View>
+                </View>
+              </AnimatedButton>
+            ))
           )}
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={[styles.planningBand, { marginHorizontal: spacing.lg, backgroundColor: colors.cardSecondary, borderRadius: borderRadius.md }]}>
+          <View style={[styles.planningIcon, { backgroundColor: `${colors.secondary}16` }]}>
+            <Ionicons name="calendar-outline" size={22} color={colors.secondary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.planningTitle, { color: colors.text }]}>Lên bữa cho cả tuần</Text>
+            <Text style={[styles.planningText, { color: colors.textSecondary }]}>Kết hợp tủ bếp, khẩu vị và lịch nấu để giảm mua thừa.</Text>
+          </View>
+          <AnimatedButton onPress={() => navigation.navigate('MealPlanner')} style={[styles.planningButton, { backgroundColor: colors.secondary }]}>
+            <Ionicons name="arrow-forward" size={18} color="#FFF" />
+          </AnimatedButton>
+        </View>
+
+        <View style={{ height: 110 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -358,233 +346,281 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  mainHeader: {
+  header: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 16,
+    marginBottom: 18,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  kicker: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.2,
     marginBottom: 8,
   },
-  headerIconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  title: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '900',
+  },
+  subtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  cartButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
   },
-  searchSection: {
-    width: '100%',
+  commandPanel: {
+    borderWidth: 1,
+    padding: 12,
   },
-  searchBar: {
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    paddingHorizontal: 4,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  commandDivider: {
+    height: 1,
+    marginVertical: 10,
+  },
+  primaryActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  scanAction: {
+    flex: 1,
+    height: 48,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  scanActionText: {
+    color: '#FFF',
+    fontWeight: '800',
     fontSize: 15,
-    paddingVertical: 0,
   },
-  heroCard: {
-    height: 240,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  inventoryCard: {
-    flexDirection: 'row',
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  inventoryInfo: {
+  typeAction: {
     flex: 1,
-    marginRight: 10,
+    height: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
-  inventoryBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 12,
+  typeActionText: {
+    fontWeight: '800',
+    fontSize: 15,
   },
-  inventoryIconBox: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  snapshotRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
+  },
+  snapshotCard: {
+    flex: 1,
+    minHeight: 142,
+    borderWidth: 1,
+    padding: 12,
+  },
+  snapshotIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 10,
   },
-  plannerCard: {
-    flexDirection: 'row',
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+  snapshotValue: {
+    fontSize: 24,
+    fontWeight: '900',
   },
-  plannerIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  snapshotLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 2,
   },
-  plannerInfo: {
-    flex: 1,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroGradient: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: 24,
-    borderRadius: 32,
-  },
-  heroContent: {
-  },
-  heroGreeting: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  heroTitle: {
-    color: '#FFF',
-    fontSize: 22,
-    fontWeight: 'bold',
-    lineHeight: 30,
-    marginBottom: 16,
-  },
-  heroBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  heroBtnText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  categorySection: {
-  },
-  categoryPill: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
-  },
-  categoryText: {
-    fontSize: 14,
+  snapshotHelper: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 5,
   },
   sectionHeader: {
     flexDirection: 'row',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    gap: 12,
+    marginTop: 28,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 21,
+    fontWeight: '900',
   },
-  bentoGridContainer: {
-    paddingHorizontal: 20,
+  sectionHint: {
+    fontSize: 12,
+    marginTop: 4,
   },
-  bentoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  bentoCard: {
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  bentoGradient: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-    padding: 16,
-  },
-  bentoName: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10
-  },
-  bentoMeta: {
+  textAction: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
   },
-  bentoTime: {
-    fontSize: 11,
-    marginLeft: 4,
-    fontWeight: '600'
+  textActionLabel: {
+    fontSize: 13,
+    fontWeight: '800',
   },
-  trendingCard: {
-    width: 200,
-    height: 150,
-    marginRight: 16,
-    borderRadius: 20,
+  categorySection: {
+    marginBottom: 14,
+  },
+  categoryPill: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 15,
+    paddingVertical: 9,
+    marginRight: 8,
+  },
+  categoryText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  recipeList: {},
+  recipeCard: {
+    width: '100%',
+    minHeight: 184,
+    borderWidth: 1,
     overflow: 'hidden',
-    backgroundColor: '#F5F5F5',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    flexDirection: width > 380 ? 'row' : 'column',
   },
-  trendingImage: {
+  recipeImageWrap: {
+    width: width > 380 ? 136 : '100%',
+    height: width > 380 ? 184 : 170,
+    position: 'relative',
+  },
+  recipeImage: {
     width: '100%',
     height: '100%',
   },
-  trendingGradient: {
+  recipeImageShade: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
-    padding: 12,
+    padding: 10,
   },
-  trendingName: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 5,
-  },
-  trendingMeta: {
+  matchBadge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.56)',
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  trendingTime: {
+  matchBadgeText: {
     color: '#FFF',
-    fontSize: 10,
-    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  recipeInfo: {
+    flex: 1,
+    padding: 14,
+  },
+  recipeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  recipeName: {
+    flex: 1,
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: '900',
+  },
+  recipeDescription: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  recipeMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  metaText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  kitchenFit: {
+    borderTopWidth: 1,
+    marginTop: 12,
+    paddingTop: 10,
+  },
+  kitchenFitStrong: {
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  kitchenFitText: {
+    marginTop: 3,
+    fontSize: 12,
+  },
+  planningBand: {
+    marginTop: 18,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  planningIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planningTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  planningText: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 3,
+  },
+  planningButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

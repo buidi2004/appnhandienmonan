@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import AlertManager from '../components/CustomAlert';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -41,8 +42,27 @@ export default function SupportScreen() {
     setExpandedIndex(expandedIndex === index ? null : index);
   };
 
-  const handleCall = () => Linking.openURL('tel:19001234');
-  const handleChat = () => Linking.openURL('https://zalo.me/yourid'); // Thay bằng link Zalo thực tế
+  const handleCall = () => {
+    AlertManager.alert(
+      'Gọi Hotline',
+      'Bạn muốn gọi điện cho bộ phận CSKH (19001234)?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Gọi', onPress: () => Linking.openURL('tel:19001234') }
+      ]
+    );
+  };
+  
+  const handleChat = () => {
+    AlertManager.alert(
+      'Chat Zalo',
+      'Mở Zalo để trò chuyện với tư vấn viên?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Mở Zalo', onPress: () => Linking.openURL('https://zalo.me/yourid') }
+      ]
+    );
+  };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
@@ -58,6 +78,7 @@ export default function SupportScreen() {
           
           <View style={styles.actionRow}>
             <TouchableOpacity 
+              activeOpacity={0.7}
               onPress={handleCall}
               style={[styles.actionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
             >
@@ -66,6 +87,7 @@ export default function SupportScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity 
+              activeOpacity={0.7}
               onPress={handleChat}
               style={[styles.actionBtn, { backgroundColor: '#0068FF', borderRadius: borderRadius.md }]}
             >
@@ -81,7 +103,7 @@ export default function SupportScreen() {
         <Text style={[typography.h2, { color: colors.text, marginBottom: spacing.md }]}>Câu hỏi thường gặp</Text>
         
         {/* Search Bar */}
-        <View style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg }]}>
+        <View style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderColor: colors.border }]}>
           <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput 
             placeholder="Tìm kiếm vấn đề của bạn..."
@@ -101,8 +123,8 @@ export default function SupportScreen() {
               onPress={() => toggleFaq(idx)}
               style={[
                 styles.faqItem, 
-                { backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.sm },
-                isExpanded && styles.faqExpanded
+                { backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.sm, borderColor: colors.border },
+                isExpanded && [styles.faqExpanded, { borderColor: colors.border }]
               ]}
             >
               <View style={styles.faqHeader}>
@@ -174,7 +196,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 50,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
   },
   searchInput: {
     flex: 1,
@@ -183,10 +204,8 @@ const styles = StyleSheet.create({
   },
   faqItem: {
     borderWidth: 1,
-    borderColor: '#F5F5F5',
   },
   faqExpanded: {
-    borderColor: '#E0E0E0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,

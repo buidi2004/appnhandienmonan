@@ -6,12 +6,13 @@ import {
   FlatList, 
   Image, 
   TouchableOpacity, 
-  SafeAreaView, 
   TextInput,
   ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeImage } from '../components/RealImage';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { TabParamList } from '../../App';
 
@@ -101,7 +102,7 @@ export default function CommunityScreen({ navigation }: Props) {
       </Text>
       
       <TouchableOpacity activeOpacity={0.9}>
-        <Image source={{ uri: item.image }} style={styles.postImage} />
+        <SafeImage uri={item.image} style={styles.postImage} />
         <View style={styles.dishTag}>
           <Ionicons name="restaurant" size={12} color="#FFF" />
           <Text style={styles.dishTagText}>{item.dishName}</Text>
