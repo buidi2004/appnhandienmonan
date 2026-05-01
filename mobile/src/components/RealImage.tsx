@@ -23,9 +23,17 @@ export const SafeImage = ({ uri, style }: { uri?: string, style: any }) => {
   };
 
   if (!uri || error) {
+    const fallbackUri = 'https://images.unsplash.com/photo-1495195129352-aec325b55b65?q=80&w=600&auto=format&fit=crop';
     return (
-      <View style={[style, styles.placeholder, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Ionicons name="restaurant-outline" size={32} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+      <View style={[style, { overflow: 'hidden' }]}>
+        <Image 
+          source={{ uri: fallbackUri }} 
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }]}>
+          <Ionicons name="restaurant-outline" size={32} color="#FFF" style={{ opacity: 0.6 }} />
+        </View>
       </View>
     );
   }

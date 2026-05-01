@@ -119,9 +119,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
             instructions: 'Bước 1: Sơ chế sạch sẽ. Bước 2: Tẩm ướp gia vị. Bước 3: Chế biến theo công thức truyền thống.',
             prep_time: item.time,
             difficulty: item.difficulty || 'Vừa',
-            calories: '400 kcal',
-            image: item.image,
-            imageUrl: item.image
+            calories: '400 kcal'
           }
         })}
       >
@@ -303,9 +301,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
                   instructions: 'Bước 1: Sơ chế nguyên liệu. Bước 2: Chế biến. Bước 3: Hoàn thành và thưởng thức.',
                   prep_time: item.time,
                   difficulty: 'Vừa',
-                  calories: '350 kcal',
-                  image: item.image,
-                  imageUrl: item.image
+                  calories: '350 kcal'
                 }
               })}
             >
