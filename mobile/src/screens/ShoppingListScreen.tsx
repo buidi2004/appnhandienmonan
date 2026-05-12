@@ -11,10 +11,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { themeColors, gradients } from '../theme';
+import { glass } from '../theme/glass';
+import { glow } from '../theme/glow';
+import { borderWidth, borderRadius, borderColors, borderPresets } from '../theme/borders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ShoppingList'>;
 
@@ -108,7 +112,7 @@ export default function ShoppingListScreen({ navigation }: Props) {
   };
 
   const renderItem = ({ item }: { item: ShoppingItem }) => (
-    <View style={[styles.itemRow, { backgroundColor: colors.card, borderRadius: borderRadius.md }]}>
+    <View style={[styles.itemRow, { ...glass.card, backgroundColor: themeColors.bgCard, borderRadius: borderRadius.md }]}>
       <TouchableOpacity 
         style={styles.checkArea} 
         onPress={() => toggleItem(item.id)}
@@ -116,13 +120,13 @@ export default function ShoppingListScreen({ navigation }: Props) {
         <Ionicons 
           name={item.checked ? "checkbox" : "square-outline"} 
           size={24} 
-          color={item.checked ? colors.success : colors.border} 
+          color={item.checked ? themeColors.purple : themeColors.borderCard} 
         />
         <View style={styles.textContainer}>
           <Text style={[
             typography.body, 
             { 
-              color: item.checked ? colors.textSecondary : colors.text,
+              color: item.checked ? themeColors.textSecondary : themeColors.textPrimary,
               textDecorationLine: item.checked ? 'line-through' : 'none',
               fontSize: 16
             }
@@ -130,7 +134,7 @@ export default function ShoppingListScreen({ navigation }: Props) {
             {item.name}
           </Text>
           {!!item.recipeTitle && (
-            <Text style={[typography.caption, { color: colors.primary, fontSize: 11 }]}>
+            <Text style={[typography.caption, { color: themeColors.purple, fontSize: 11 }]}>
               Từ: {item.recipeTitle}
             </Text>
           )}
@@ -138,55 +142,53 @@ export default function ShoppingListScreen({ navigation }: Props) {
       </TouchableOpacity>
       
       <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.deleteBtn}>
-        <Ionicons name="trash-outline" size={20} color={colors.error} />
+        <Ionicons name="trash-outline" size={20} color={themeColors.pink} />
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
+      <View style={[styles.header, { borderBottomColor: themeColors.borderCard }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={themeColors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[typography.h2, { color: colors.text, flex: 1, textAlign: 'center' }]}>Danh sách mua sắm</Text>
+        <Text style={[typography.h2, { color: themeColors.textPrimary, flex: 1, textAlign: 'center' }]}>Danh sách mua sắm</Text>
         <TouchableOpacity onPress={clearAll} style={styles.clearBtn}>
-          <Text style={[typography.caption, { color: colors.error, fontWeight: 'bold' }]}>Xóa hết</Text>
+          <Text style={[typography.caption, { color: themeColors.pink, fontWeight: 'bold' }]}>Xóa hết</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={themeColors.purple} />
         </View>
       ) : items.length === 0 ? (
         <View style={styles.center}>
-          <View style={[styles.emptyIconCircle, { backgroundColor: `${colors.primary}10` }]}>
-            <Ionicons name="cart-outline" size={60} color={colors.primary} />
+          <View style={[styles.emptyIconCircle, { backgroundColor: `${themeColors.purple}10` }]}>
+            <Ionicons name="cart-outline" size={60} color={themeColors.purple} />
           </View>
-          <Text style={[typography.h3, { color: colors.text, marginTop: 20 }]}>Giỏ hàng trống</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 10, paddingHorizontal: 40 }]}>
+          <Text style={[typography.h3, { color: themeColors.textPrimary, marginTop: 20 }]}>Giỏ hàng trống</Text>
+          <Text style={[typography.body, { color: themeColors.textSecondary, textAlign: 'center', marginTop: 10, paddingHorizontal: 40 }]}>
             Hãy thêm nguyên liệu từ các công thức nấu ăn để quản lý việc đi chợ của bạn.
           </Text>
           <TouchableOpacity 
-            style={[styles.startShoppingBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.lg }]}
+            style={[styles.startShoppingBtn, { ...glow.button, backgroundColor: themeColors.purple, borderRadius: borderRadius.lg }]}
             onPress={() => {
               navigation.navigate('AIResult', {
                 initialRecipe: {
                   title: 'Gợi ý món mới',
-                  description: 'AI đang phân tích các món ngon phù hợp nhất cho bạn hôm nay...',
                   ingredients: ['Thịt', 'Rau xanh', 'Gia vị'],
                   instructions: 'Đang tải...',
                   prep_time: '20 phút',
                   difficulty: 'Dễ',
                   calories: '300 kcal',
-                  image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop',
                   imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop'
                 }
               });
             }}
           >
-            <Text style={[typography.h3, { color: '#FFF' }]}>Tìm công thức ngay</Text>
+            <Text style={[typography.h3, { color: themeColors.textPrimary }]}>Tìm công thức ngay</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -199,10 +201,10 @@ export default function ShoppingListScreen({ navigation }: Props) {
             showsVerticalScrollIndicator={false}
           />
           
-          <View style={[styles.bottomSummary, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+          <View style={[styles.bottomSummary, { ...glass.bottomNav, backgroundColor: themeColors.bgBottomNav }]}>
             <View style={styles.totalRow}>
-              <Text style={[typography.body, { color: colors.textSecondary }]}>Tổng ước tính:</Text>
-              <Text style={[typography.h2, { color: colors.primary }]}>
+              <Text style={[typography.body, { color: themeColors.textSecondary }]}>Tổng ước tính:</Text>
+              <Text style={[typography.h2, { color: themeColors.purple }]}>
                 {totalPrice.toLocaleString('vi-VN')} đ
               </Text>
             </View>
@@ -210,10 +212,10 @@ export default function ShoppingListScreen({ navigation }: Props) {
 
           {items.some(i => i.checked) && (
             <TouchableOpacity 
-              style={[styles.floatingClearBtn, { backgroundColor: colors.success, shadowColor: colors.success }]}
+              style={[styles.floatingClearBtn, { ...glow.button, backgroundColor: themeColors.purple, shadowColor: themeColors.purple }]}
               onPress={clearChecked}
             >
-              <Ionicons name="checkmark-done" size={20} color="#FFF" />
+              <Ionicons name="checkmark-done" size={20} color={themeColors.textPrimary} />
               <Text style={styles.floatingClearText}>Dọn dẹp món đã mua</Text>
             </TouchableOpacity>
           )}
@@ -226,11 +228,7 @@ export default function ShoppingListScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { 
-    height: 60, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    height: 60, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, borderBottomWidth: 1,
   },
   backBtn: { padding: 4 },
   clearBtn: { padding: 8 },
@@ -238,60 +236,21 @@ const styles = StyleSheet.create({
   emptyIconCircle: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
   startShoppingBtn: { marginTop: 30, paddingVertical: 14, paddingHorizontal: 30 },
   itemRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    padding: 16, 
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 12,
+    ...borderPresets.card,
   },
   checkArea: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   textContainer: { marginLeft: 12, flex: 1 },
   deleteBtn: { padding: 8 },
   floatingClearBtn: {
-    position: 'absolute',
-    bottom: 30,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 30,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    position: 'absolute', bottom: 100, alignSelf: 'center', flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 12, borderRadius: borderRadius.round,
   },
   floatingClearText: { color: '#FFF', fontWeight: 'bold', marginLeft: 8 },
   bottomSummary: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    paddingBottom: 34,
-    borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 20,
+    position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 34,
   },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  checkoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-  },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 });
 
 

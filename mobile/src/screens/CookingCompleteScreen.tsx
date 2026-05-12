@@ -2,11 +2,13 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { themeColors, gradients, glass, glow } from '../theme';
+import { RealImage } from '../components/RealImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CookingComplete'>;
 const { width } = Dimensions.get('window');
@@ -21,7 +23,7 @@ interface AchievementUnlock {
 
 export default function CookingCompleteScreen({ route, navigation }: Props) {
   const { colors, typography } = useAppTheme();
-  const { dishName, totalSteps, cookingTime, photosCount } = route.params;
+  const { dishName, totalSteps, cookingTime, photosCount, dishImage } = route.params;
 
   const [totalCooked, setTotalCooked] = useState(0);
   const [newAchievement, setNewAchievement] = useState<AchievementUnlock | null>(null);
@@ -144,7 +146,7 @@ export default function CookingCompleteScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       {/* Decorative confetti dots */}
       {confettiDots.map((dot, i) => (
         <Animated.View
@@ -174,56 +176,63 @@ export default function CookingCompleteScreen({ route, navigation }: Props) {
       <View style={styles.content}>
         {/* Success Icon */}
         <Animated.View style={[styles.checkContainer, { transform: [{ scale: checkScale }] }]}>
-          <LinearGradient
-            colors={['#34C759', '#30D158']}
-            style={styles.checkCircle}
-          >
-            <Ionicons name="checkmark" size={48} color="#FFF" />
-          </LinearGradient>
+          <View style={styles.trophyWrapper}>
+            <RealImage 
+              query={dishName}
+              initialUri={dishImage}
+              style={styles.trophyImage}
+            />
+            <LinearGradient
+              colors={['#34C759', '#30D158']}
+              style={styles.checkBadge}
+            >
+              <Ionicons name="checkmark" size={24} color="#FFF" />
+            </LinearGradient>
+          </View>
         </Animated.View>
 
         {/* Title */}
         <Animated.View style={[styles.titleSection, { opacity: titleOpacity }]}>
-          <Text style={[styles.congratsText, { color: colors.textSecondary }]}>Tuyệt vời!</Text>
-          <Text style={[styles.dishName, { color: colors.text }]}>{dishName}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>đã hoàn thành</Text>
+          <Text style={[styles.congratsText, { color: themeColors.textSecondary }]}>Tuyệt vời!</Text>
+          <Text style={[styles.dishName, { color: themeColors.textPrimary }]}>{dishName}</Text>
+          <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>đã hoàn thành</Text>
         </Animated.View>
 
         {/* Stats Grid */}
         <Animated.View style={[styles.statsGrid, { opacity: statsOpacity }]}>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.statCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
             <Ionicons name="time-outline" size={20} color="#007AFF" />
-            <Text style={[styles.statCardValue, { color: colors.text }]}>{formatTime(cookingTime)}</Text>
-            <Text style={[styles.statCardLabel, { color: colors.textSecondary }]}>Thời gian</Text>
+            <Text style={[styles.statCardValue, { color: themeColors.textPrimary }]}>{formatTime(cookingTime)}</Text>
+            <Text style={[styles.statCardLabel, { color: themeColors.textSecondary }]}>Thời gian</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.statCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
             <Ionicons name="list-outline" size={20} color="#FF9500" />
-            <Text style={[styles.statCardValue, { color: colors.text }]}>{totalSteps}</Text>
-            <Text style={[styles.statCardLabel, { color: colors.textSecondary }]}>Bước</Text>
+            <Text style={[styles.statCardValue, { color: themeColors.textPrimary }]}>{totalSteps}</Text>
+            <Text style={[styles.statCardLabel, { color: themeColors.textSecondary }]}>Bước</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.statCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
             <Ionicons name="camera-outline" size={20} color="#AF52DE" />
-            <Text style={[styles.statCardValue, { color: colors.text }]}>{photosCount}</Text>
-            <Text style={[styles.statCardLabel, { color: colors.textSecondary }]}>Ảnh</Text>
+            <Text style={[styles.statCardValue, { color: themeColors.textPrimary }]}>{photosCount}</Text>
+            <Text style={[styles.statCardLabel, { color: themeColors.textSecondary }]}>Ảnh</Text>
           </View>
         </Animated.View>
 
         {/* XP Badge */}
-        <Animated.View style={[styles.xpBadge, { backgroundColor: `${colors.primary}10`, opacity: statsOpacity }]}>
-          <Ionicons name="sparkles" size={18} color={colors.primary} />
-          <Text style={[styles.xpText, { color: colors.primary }]}>+{xpGained} XP kinh nghiệm</Text>
-          <Text style={[styles.totalCooked, { color: colors.textSecondary }]}>Tổng cộng {totalCooked} món</Text>
+        <Animated.View style={[styles.xpBadge, { backgroundColor: `${themeColors.purple}10`, opacity: statsOpacity }]}>
+          <Ionicons name="trophy-outline" size={18} color={themeColors.purple} />
+          <Text style={[styles.xpText, { color: themeColors.purple }]}>+{xpGained} XP kinh nghiệm</Text>
+          <Text style={[styles.totalCooked, { color: themeColors.textSecondary }]}>Tổng cộng {totalCooked} món</Text>
         </Animated.View>
 
         {/* Achievement Unlock */}
         {newAchievement && (
-          <Animated.View style={[styles.achievementBanner, { backgroundColor: colors.card, opacity: statsOpacity }]}>
+          <Animated.View style={[styles.achievementBanner, { ...glass.card, backgroundColor: themeColors.bgCard, opacity: statsOpacity }]}>
             <View style={[styles.achievementIcon, { backgroundColor: `${newAchievement.color}15` }]}>
               <Ionicons name={newAchievement.icon as any} size={24} color={newAchievement.color} />
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={[styles.achievementLabel, { color: colors.textSecondary }]}>Thành tích mới</Text>
-              <Text style={[styles.achievementTitle, { color: colors.text }]}>{newAchievement.title}</Text>
+              <Text style={[styles.achievementLabel, { color: themeColors.textSecondary }]}>Thành tích mới</Text>
+              <Text style={[styles.achievementTitle, { color: themeColors.textPrimary }]}>{newAchievement.title}</Text>
             </View>
             <Ionicons name="checkmark-circle" size={22} color="#34C759" />
           </Animated.View>
@@ -235,30 +244,30 @@ export default function CookingCompleteScreen({ route, navigation }: Props) {
         <View style={styles.actionRow}>
           <TouchableOpacity 
             activeOpacity={0.7}
-            style={[styles.secondaryBtn, { backgroundColor: colors.card }]} 
+            style={[styles.secondaryBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]} 
             onPress={handleShare}
           >
-            <Ionicons name="share-outline" size={20} color={colors.text} />
-            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Chia sẻ</Text>
+            <Ionicons name="share-outline" size={20} color={themeColors.textPrimary} />
+            <Text style={[styles.secondaryBtnText, { color: themeColors.textPrimary }]}>Chia sẻ</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             activeOpacity={0.7}
-            style={[styles.secondaryBtn, { backgroundColor: colors.card }]} 
+            style={[styles.secondaryBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]} 
             onPress={handleViewHistory}
           >
-            <Ionicons name="stats-chart-outline" size={20} color={colors.text} />
-            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Thống kê</Text>
+            <Ionicons name="stats-chart-outline" size={20} color={themeColors.textPrimary} />
+            <Text style={[styles.secondaryBtnText, { color: themeColors.textPrimary }]}>Thống kê</Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity activeOpacity={0.85} onPress={handleDone}>
           <LinearGradient
-            colors={[colors.primary, `${colors.primary}CC`]}
+            colors={gradients.button}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.doneButton, { shadowColor: colors.primary }]}
+            style={[{ ...glow.button }, styles.doneButton]}
           >
             <View style={styles.doneBtnIconWrapper}>
-              <Ionicons name="home" size={16} color={colors.primary} />
+              <Ionicons name="home" size={16} color={themeColors.purple} />
             </View>
             <Text style={styles.doneButtonText}>Về trang chủ</Text>
           </LinearGradient>
@@ -276,10 +285,15 @@ const styles = StyleSheet.create({
   confettiDot: { position: 'absolute' },
 
   // Check icon
-  checkContainer: { marginBottom: 32 },
-  checkCircle: { 
-    width: 96, height: 96, borderRadius: 48, justifyContent: 'center', alignItems: 'center',
+  checkContainer: { 
+    marginBottom: 32,
     shadowColor: '#34C759', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+  },
+  trophyWrapper: { position: 'relative', width: 160, height: 160 },
+  trophyImage: { width: '100%', height: '100%', borderRadius: 80, borderWidth: 4, borderColor: 'rgba(255,255,255,0.1)' },
+  checkBadge: { 
+    position: 'absolute', bottom: 5, right: 5, width: 44, height: 44, borderRadius: 22, 
+    justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: themeColors.bgPrimary 
   },
 
   // Title

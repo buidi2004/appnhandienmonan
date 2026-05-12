@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import AlertManager from '../components/CustomAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimatedButton from '../components/AnimatedButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import { themeColors, gradients, glass, glow } from '../theme';
 import { auth, signInWithEmailAndPassword, signInWithGoogle } from '../services/authService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
@@ -67,7 +69,7 @@ export default function AuthScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       <KeyboardAvoidingView 
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -78,19 +80,19 @@ export default function AuthScreen({ navigation }: Props) {
         >
           {/* Header - Kéo xuống thấp hơn để tránh notch */}
           <View style={[styles.header, { marginTop: 60, marginBottom: spacing.xl }]}>
-            <Text style={[styles.title, typography.h1, { color: colors.primary }]}>Chào mừng trở lại</Text>
-            <Text style={[styles.subtitle, typography.body, { color: colors.textSecondary }]}>Đăng nhập để khám phá món ngon!</Text>
+            <Text style={[styles.title, typography.h1, { color: themeColors.purple }]}>Chào mừng trở lại</Text>
+            <Text style={[styles.subtitle, typography.body, { color: themeColors.textSecondary }]}>Đăng nhập để khám phá món ngon!</Text>
           </View>
 
           <View style={styles.form}>
             {/* Cụm Input & Login - Dồn lại gần nhau hơn */}
             <View style={styles.inputGroup}>
-              <View style={[styles.inputContainer, { backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: 12, borderColor: colors.border }]}>
-                <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={[styles.inputIcon, { paddingHorizontal: spacing.md }]} />
+              <View style={[styles.inputContainer, { ...glass.card, backgroundColor: themeColors.bgCard, borderRadius: borderRadius.md, marginBottom: 12, borderColor: themeColors.borderCard }]}>
+                <Ionicons name="mail-outline" size={20} color={themeColors.textSecondary} style={[styles.inputIcon, { paddingHorizontal: spacing.md }]} />
                 <TextInput
-                  style={[styles.input, typography.body, { color: colors.text }]}
+                  style={[styles.input, typography.body, { color: themeColors.textPrimary }]}
                   placeholder="Email hoặc Số điện thoại"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={themeColors.textSecondary}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -98,72 +100,75 @@ export default function AuthScreen({ navigation }: Props) {
                 />
               </View>
 
-              <View style={[styles.inputContainer, { backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: 8, borderColor: colors.border }]}>
-                <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={[styles.inputIcon, { paddingHorizontal: spacing.md }]} />
+              <View style={[styles.inputContainer, { ...glass.card, backgroundColor: themeColors.bgCard, borderRadius: borderRadius.md, marginBottom: 8, borderColor: themeColors.borderCard }]}>
+                <Ionicons name="lock-closed-outline" size={20} color={themeColors.textSecondary} style={[styles.inputIcon, { paddingHorizontal: spacing.md }]} />
                 <TextInput
-                  style={[styles.input, typography.body, { color: colors.text }]}
+                  style={[styles.input, typography.body, { color: themeColors.textPrimary }]}
                   placeholder="Mật khẩu"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={themeColors.textSecondary}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
                 />
                 <AnimatedButton onPress={() => setShowPassword(!showPassword)} style={[styles.eyeIcon, { paddingHorizontal: spacing.md }]}>
-                  <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color={colors.textSecondary} />
+                  <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color={themeColors.textSecondary} />
                 </AnimatedButton>
               </View>
 
               <AnimatedButton style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
-                <Text style={[styles.forgotText, typography.caption, { color: colors.primary }]}>Quên mật khẩu?</Text>
+                <Text style={[styles.forgotText, typography.caption, { color: themeColors.purple }]}>Quên mật khẩu?</Text>
               </AnimatedButton>
 
-              <AnimatedButton 
-                style={[styles.loginButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md, marginTop: 24, shadowColor: colors.primary }]} 
-                onPress={handleLogin}
+              <TouchableOpacity 
                 activeOpacity={0.8}
+                onPress={handleLogin}
+                style={[styles.loginButtonWrapper, { ...glow.button, shadowColor: themeColors.purple, marginTop: 24 }]} 
               >
-                <Text style={[styles.loginButtonText, typography.h3, { color: colors.background }]}>Đăng nhập</Text>
-              </AnimatedButton>
+                <LinearGradient
+                  colors={gradients.button}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.loginButton, { borderRadius: borderRadius.md }]}
+                >
+                  <Text style={[styles.loginButtonText, typography.h3, { color: themeColors.textPrimary }]}>Đăng nhập</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
 
             {/* Cụm Social - Hiện đại & Gọn gàng */}
             <View style={[styles.dividerContainer, { marginVertical: 32 }]}>
-              <View style={[styles.divider, { backgroundColor: colors.border }]} />
-              <Text style={[styles.dividerText, typography.caption, { marginHorizontal: spacing.md, color: colors.textSecondary }]}>Hoặc tiếp tục với</Text>
-              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              <View style={[styles.divider, { backgroundColor: themeColors.borderCard }]} />
+              <Text style={[styles.dividerText, typography.caption, { marginHorizontal: spacing.md, color: themeColors.textSecondary }]}>Hoặc tiếp tục với</Text>
+              <View style={[styles.divider, { backgroundColor: themeColors.borderCard }]} />
             </View>
 
             <View style={styles.socialRow}>
-              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Google')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Google')} style={[styles.socialIconOnlyBtn, { backgroundColor: themeColors.bgCard, borderColor: themeColors.borderCard }]}>
                 <Ionicons name="logo-google" size={24} color="#DB4437" />
               </AnimatedButton>
               
-              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Facebook')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Facebook')} style={[styles.socialIconOnlyBtn, { backgroundColor: themeColors.bgCard, borderColor: themeColors.borderCard }]}>
                 <Ionicons name="logo-facebook" size={24} color="#1877F2" />
               </AnimatedButton>
-
-              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Zalo')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Ionicons name="chatbubble" size={24} color="#0068FF" />
-              </AnimatedButton>
-
-              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Apple')} style={[styles.socialIconOnlyBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Ionicons name="logo-apple" size={24} color={colors.text} />
+              
+              <AnimatedButton activeOpacity={0.7} onPress={() => handleSocialLogin('Apple')} style={[styles.socialIconOnlyBtn, { backgroundColor: themeColors.bgCard, borderColor: themeColors.borderCard }]}>
+                <Ionicons name="logo-apple" size={24} color={themeColors.textPrimary} />
               </AnimatedButton>
             </View>
           </View>
 
           <View style={[styles.footer, { marginTop: 40 }]}>
-            <Text style={[styles.footerText, typography.body, { color: colors.textSecondary }]}>Bạn chưa có tài khoản? </Text>
+            <Text style={[styles.footerText, typography.body, { color: themeColors.textSecondary }]}>Bạn chưa có tài khoản? </Text>
             <AnimatedButton onPress={() => navigation.navigate('Register')}>
-              <Text style={[styles.registerText, typography.body, { color: colors.primary }]}>Đăng ký ngay</Text>
+              <Text style={[styles.registerText, typography.body, { color: themeColors.purple }]}>Đăng ký ngay</Text>
             </AnimatedButton>
           </View>
 
           {/* Hotline - Đẩy xuống đáy */}
           <View style={{ flex: 1 }} />
           <AnimatedButton style={[styles.hotlineContainer, { paddingVertical: 24 }]} onPress={handleOpenHotline}>
-            <Ionicons name="headset-outline" size={18} color={colors.textSecondary} />
-            <Text style={[styles.hotlineText, typography.caption, { color: colors.textSecondary }]}> Gặp sự cố? Liên hệ Hotline: <Text style={[styles.hotphoneNumber, { color: colors.text }]}>0901.234.567</Text></Text>
+            <Ionicons name="headset-outline" size={18} color={themeColors.textSecondary} />
+            <Text style={[styles.hotlineText, typography.caption, { color: themeColors.textSecondary }]}> Gặp sự cố? Liên hệ Hotline: <Text style={[styles.hotphoneNumber, { color: themeColors.textPrimary }]}>0901.234.567</Text></Text>
           </AnimatedButton>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -172,99 +177,37 @@ export default function AuthScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  header: {
-  },
-  title: {
-    marginBottom: 8,
-  },
-  subtitle: {
-  },
-  form: {
-    width: '100%',
-  },
-  inputGroup: {
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    height: 56,
-  },
-  inputIcon: {
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-  },
-  eyeIcon: {
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-  },
-  forgotText: {
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
+  header: {},
+  title: { marginBottom: 8 },
+  subtitle: {},
+  form: { width: '100%' },
+  inputGroup: {},
+  inputContainer: { flexDirection: 'row', alignItems: 'center', height: 56 },
+  inputIcon: {},
+  input: { flex: 1, height: '100%' },
+  eyeIcon: {},
+  forgotPassword: { alignSelf: 'flex-end' },
+  forgotText: { fontWeight: '600' },
+  loginButtonWrapper: { height: 56 },
   loginButton: {
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    height: '100%', justifyContent: 'center', alignItems: 'center',
   },
-  loginButtonText: {
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-  },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 8,
-  },
+  loginButtonText: { fontWeight: 'bold' },
+  dividerContainer: { flexDirection: 'row', alignItems: 'center' },
+  divider: { flex: 1, height: 1 },
+  dividerText: {},
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 8 },
   socialIconOnlyBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 4,
+    width: 60, height: 60, borderRadius: 30, borderWidth: 1,
+    justifyContent: 'center', alignItems: 'center', marginHorizontal: 4,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  footerText: {
-  },
-  registerText: {
-    fontWeight: 'bold',
-  },
-  hotlineContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hotlineText: {
-    marginLeft: 4,
-  },
-  hotphoneNumber: {
-    fontWeight: 'bold',
-  }
+  footer: { flexDirection: 'row', justifyContent: 'center' },
+  footerText: {},
+  registerText: { fontWeight: 'bold' },
+  hotlineContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  hotlineText: { marginLeft: 4 },
+  hotphoneNumber: { fontWeight: 'bold' }
 });
 

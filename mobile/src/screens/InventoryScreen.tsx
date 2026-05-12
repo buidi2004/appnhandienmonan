@@ -13,14 +13,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AnimatedButton from '../components/AnimatedButton';
-import GlassCard from '../components/GlassCard';
+import { GlassCard } from '../components/ui/GlassCard';
 import EmptyState from '../components/EmptyState';
+import { themeColors, gradients } from '../theme';
+import { glass } from '../theme/glass';
+import { glow } from '../theme/glow';
+import { borderWidth, borderRadius, borderColors, borderPresets } from '../theme/borders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Inventory'>;
 
@@ -111,9 +115,9 @@ export default function InventoryScreen({ navigation }: Props) {
     const expiry = new Date(expiryDateStr);
     const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return colors.error; // Đã hỏng
+    if (diffDays < 0) return '#FF3B30'; // Đã hỏng
     if (diffDays <= 2) return '#FF9500'; // Sắp hỏng
-    return colors.success; // Còn tươi
+    return '#34C759'; // Còn tươi
   };
 
   const getStatusText = (expiryDateStr: string) => {
@@ -130,11 +134,11 @@ export default function InventoryScreen({ navigation }: Props) {
   const renderItem = ({ item }: { item: InventoryItem }) => {
     const statusColor = getStatusColor(item.expiryDate);
     return (
-      <View style={[styles.itemCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg }]}>
+      <View style={[styles.itemCard, { ...glass.card, backgroundColor: themeColors.bgCard, borderRadius: borderRadius.lg }]}>
         <View style={[styles.categoryBar, { backgroundColor: statusColor }]} />
         <View style={styles.itemInfo}>
-          <Text style={[typography.h3, { color: colors.text }]}>{item.name}</Text>
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>
+          <Text style={[typography.h3, { color: themeColors.textPrimary }]}>{item.name}</Text>
+          <Text style={[typography.caption, { color: themeColors.textSecondary }]}>
             Số lượng: {item.quantity} • {item.category}
           </Text>
           <Text style={[typography.caption, { color: statusColor, fontWeight: 'bold', marginTop: 4 }]}>
@@ -142,19 +146,19 @@ export default function InventoryScreen({ navigation }: Props) {
           </Text>
         </View>
         <AnimatedButton activeOpacity={0.7} onPress={() => removeItem(item.id)} style={styles.deleteBtn}>
-          <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
+          <Ionicons name="trash-outline" size={20} color={themeColors.textSecondary} />
         </AnimatedButton>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
+      <View style={[styles.header, { borderBottomColor: themeColors.borderCard }]}>
         <AnimatedButton activeOpacity={0.7} onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={themeColors.textPrimary} />
         </AnimatedButton>
-        <Text style={[typography.h2, { color: colors.text, flex: 1, textAlign: 'center' }]}>Tủ lạnh của bạn</Text>
+        <Text style={[typography.h2, { color: themeColors.textPrimary, flex: 1, textAlign: 'center' }]}>Tủ lạnh của bạn</Text>
         
         {items.length > 0 && (
           <AnimatedButton 
@@ -165,12 +169,12 @@ export default function InventoryScreen({ navigation }: Props) {
             }} 
             style={styles.magicBtn}
           >
-            <Ionicons name="sparkles" size={24} color={colors.primary} />
+            <Ionicons name="restaurant-outline" size={24} color={themeColors.purple} />
           </AnimatedButton>
         )}
 
         <AnimatedButton activeOpacity={0.7} onPress={() => setModalVisible(true)} style={styles.addBtn}>
-          <Ionicons name="add-circle" size={32} color={colors.primary} />
+          <Ionicons name="add-circle" size={32} color={themeColors.purple} />
         </AnimatedButton>
       </View>
 
@@ -194,26 +198,26 @@ export default function InventoryScreen({ navigation }: Props) {
       {/* Modal thêm thực phẩm */}
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background, borderRadius: borderRadius.xl }]}>
-            <Text style={[typography.h2, { color: colors.text, marginBottom: 20 }]}>Thêm thực phẩm</Text>
+          <View style={[styles.modalContent, { ...glass.card, backgroundColor: themeColors.bgPrimary, borderRadius: borderRadius.xl }]}>
+            <Text style={[typography.h2, { color: themeColors.textPrimary, marginBottom: 20 }]}>Thêm thực phẩm</Text>
             
             <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderRadius: borderRadius.md }]}
+              style={[styles.input, { backgroundColor: themeColors.bgCard, color: themeColors.textPrimary, borderRadius: borderRadius.md }]}
               placeholder="Tên thực phẩm (vd: Thịt bò, Cải bó xôi...)"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={themeColors.textSecondary}
               value={newItemName}
               onChangeText={setNewItemName}
             />
 
             <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderRadius: borderRadius.md, marginTop: 12 }]}
+              style={[styles.input, { backgroundColor: themeColors.bgCard, color: themeColors.textPrimary, borderRadius: borderRadius.md, marginTop: 12 }]}
               placeholder="Số lượng (vd: 500g, 2 quả...)"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={themeColors.textSecondary}
               value={newItemQty}
               onChangeText={setNewItemQty}
             />
 
-            <Text style={[typography.caption, { color: colors.text, marginTop: 16, marginBottom: 8 }]}>Danh mục</Text>
+            <Text style={[typography.caption, { color: themeColors.textPrimary, marginTop: 16, marginBottom: 8 }]}>Danh mục</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
               {CATEGORIES.map(cat => (
                 <AnimatedButton 
@@ -223,23 +227,23 @@ export default function InventoryScreen({ navigation }: Props) {
                   style={[
                     styles.catPill, 
                     { 
-                      backgroundColor: newItemCategory === cat ? colors.primary : colors.card,
+                      backgroundColor: newItemCategory === cat ? themeColors.purple : themeColors.bgCard,
                       borderRadius: 20
                     }
                   ]}
                 >
-                  <Text style={{ color: newItemCategory === cat ? '#FFF' : colors.text }}>{cat}</Text>
+                  <Text style={{ color: newItemCategory === cat ? '#FFF' : themeColors.textPrimary }}>{cat}</Text>
                 </AnimatedButton>
               ))}
             </ScrollView>
 
             <AnimatedButton 
               activeOpacity={0.7}
-              style={[styles.dateBtn, { backgroundColor: colors.card, borderRadius: borderRadius.md }]}
+              style={[styles.dateBtn, { backgroundColor: themeColors.bgCard, borderRadius: borderRadius.md }]}
               onPress={() => setShowDatePicker(true)}
             >
-              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-              <Text style={{ marginLeft: 10, color: colors.text }}>
+              <Ionicons name="calendar-outline" size={20} color={themeColors.purple} />
+              <Text style={{ marginLeft: 10, color: themeColors.textPrimary }}>
                 Hạn sử dụng: {expiryDate.toLocaleDateString('vi-VN')}
               </Text>
             </AnimatedButton>
@@ -257,10 +261,10 @@ export default function InventoryScreen({ navigation }: Props) {
             )}
 
             <View style={styles.modalButtons}>
-              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.border }]} onPress={() => setModalVisible(false)}>
-                <Text style={{ color: colors.textSecondary }}>Hủy</Text>
+              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: themeColors.bgCard, borderWidth: 1, borderColor: themeColors.borderCard }]} onPress={() => setModalVisible(false)}>
+                <Text style={{ color: themeColors.textSecondary }}>Hủy</Text>
               </AnimatedButton>
-              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={addItem}>
+              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: themeColors.purple }]} onPress={addItem}>
                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Thêm vào tủ</Text>
               </AnimatedButton>
             </View>
@@ -288,19 +292,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...borderPresets.card,
+    shadowColor: '#a855f7',
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    elevation: 4,
   },
   categoryBar: { width: 6 },
   itemInfo: { flex: 1, padding: 16 },
   deleteBtn: { padding: 16, justifyContent: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { padding: 24, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  modalContent: { padding: 24, borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl },
   input: { padding: 14, fontSize: 16 },
-  catPill: { paddingHorizontal: 16, paddingVertical: 8, marginRight: 8 },
+  catPill: { paddingHorizontal: 16, paddingVertical: 8, marginRight: 8, borderRadius: borderRadius.round },
   dateBtn: { flexDirection: 'row', alignItems: 'center', padding: 14, marginTop: 4 },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
   modalBtn: { flex: 0.48, padding: 16, borderRadius: 12, alignItems: 'center' },

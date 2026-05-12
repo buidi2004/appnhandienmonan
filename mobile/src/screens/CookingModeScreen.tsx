@@ -7,9 +7,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Accelerometer } from 'expo-sensors';
@@ -17,7 +18,10 @@ import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RealImage } from '../components/RealImage';
 import AnimatedButton from '../components/AnimatedButton';
-import GlassCard from '../components/GlassCard';
+import { GlassCard } from '../components/ui/GlassCard';
+import { themeColors, gradients, glass, glow } from '../theme';
+import { borderWidth, borderRadius, borderColors, borderPresets } from '../theme/borders';
+
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CookingMode'>;
 const { width } = Dimensions.get('window');
@@ -42,12 +46,12 @@ function highlightStepText(text: string, accentColor: string, textColor: string,
     lastIndex = combined.lastIndex;
   }
   if (lastIndex < text.length) parts.push({ text: text.slice(lastIndex), highlight: false });
-  if (parts.length === 0) return <Text style={[styles.stepText, { color: textColor, fontSize: 24 * scale, lineHeight: 34 * scale }]}>{text}</Text>;
+  if (parts.length === 0) return <Text style={[styles.stepText, { color: textColor, fontSize: 20 * scale, lineHeight: 28 * scale }]}>{text}</Text>;
   return (
-    <Text style={[styles.stepText, { color: textColor, fontSize: 24 * scale, lineHeight: 34 * scale }]}>
+    <Text style={[styles.stepText, { color: textColor, fontSize: 20 * scale, lineHeight: 28 * scale }]}>
       {parts.map((part, i) =>
         part.highlight
-          ? <Text key={i} style={{ color: accentColor, fontWeight: '900' }}>{part.text}</Text>
+          ? <Text key={i} style={{ color: accentColor, fontWeight: '700' }}>{part.text}</Text>
           : <Text key={i}>{part.text}</Text>
       )}
     </Text>
@@ -74,7 +78,7 @@ function formatTime(seconds: number): string {
 
 export default function CookingModeScreen({ route, navigation }: Props) {
   const { colors, typography } = useAppTheme();
-  const { steps, dishName, ingredients, tips } = route.params;
+  const { steps, dishName, ingredients, tips, dishImage } = route.params;
 
   useKeepAwake();
 
@@ -110,8 +114,8 @@ export default function CookingModeScreen({ route, navigation }: Props) {
 
   const detectedSeconds = useMemo(() => extractTimerSeconds(steps[currentStep]), [currentStep]);
   const highlightedCurrentStep = useMemo(
-    () => highlightStepText(steps[currentStep], colors.primary, colors.text, textScale),
-    [currentStep, colors.primary, colors.text, textScale]
+    () => highlightStepText(steps[currentStep], themeColors.purple, themeColors.textPrimary, textScale),
+    [currentStep, themeColors.purple, themeColors.textPrimary, textScale]
   );
 
   // --- Swipe Gesture (fix: chỉ kích hoạt khi vuốt ngang rõ ràng, tránh conflict ScrollView) ---
@@ -278,6 +282,7 @@ export default function CookingModeScreen({ route, navigation }: Props) {
         totalSteps: steps.length,
         cookingTime: cookingTimeSec,
         photosCount: totalPhotos,
+        dishImage,
       });
     }
   };
@@ -303,7 +308,12 @@ export default function CookingModeScreen({ route, navigation }: Props) {
   const scaleLabel = textScale <= 0.85 ? 'Nhỏ' : textScale <= 1 ? 'Vừa' : 'Lớn';
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
+      {/* Ambient Orbs */}
+      <View style={styles.orb1} />
+      <View style={styles.orb2} />
+      <View style={styles.orb3} />
+      
       {/* Header */}
       <View style={styles.header}>
         <AnimatedButton activeOpacity={0.7} onPress={() => {
@@ -312,48 +322,52 @@ export default function CookingModeScreen({ route, navigation }: Props) {
             { text: 'Thoát', style: 'destructive', onPress: () => { stopTimer(); Speech.stop(); navigation.goBack(); } },
           ]);
         }} style={styles.closeBtn}>
-          <Ionicons name="close" size={28} color={colors.text} />
+          <Ionicons name="close" size={28} color={themeColors.textPrimary} />
         </AnimatedButton>
         <View style={styles.headerTitleBox}>
-          <Text style={[typography.caption, { color: colors.primary, fontWeight: 'bold' }]}>CHẾ ĐỘ NẤU ĂN</Text>
-          <Text style={[typography.h3, { color: colors.text }]} numberOfLines={1}>{dishName}</Text>
+          <Text style={[typography.caption, { color: themeColors.purple, fontWeight: 'bold' }]}>CHẾ ĐỘ NẤU ĂN</Text>
+          <Text style={[typography.h3, { color: themeColors.textPrimary }]} numberOfLines={1}>{dishName}</Text>
         </View>
         {/* Header Right Actions */}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {/* Text Scale Button */}
           <AnimatedButton activeOpacity={0.7} onPress={cycleTextScale} style={styles.headerIconBtn}>
-            <Ionicons name="text" size={20} color={colors.primary} />
-            <Text style={{ fontSize: 8, color: colors.primary, fontWeight: 'bold' }}>{scaleLabel}</Text>
+            <Ionicons name="text" size={20} color={themeColors.purple} />
+            <Text style={{ fontSize: 8, color: themeColors.purple, fontWeight: 'bold' }}>{scaleLabel}</Text>
           </AnimatedButton>
         </View>
       </View>
 
-      {/* Progress Bar */}
-      <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
-        <Animated.View style={[styles.progressBar, { width: progress, backgroundColor: colors.primary }]} />
-      </View>
-
-      {/* Step Dots */}
-      <View style={styles.stepDotsRow}>
-        {steps.map((_, i) => (
-          <View key={i} style={[styles.stepDot, {
-            backgroundColor: i <= currentStep ? colors.primary : colors.border,
-            width: i === currentStep ? 20 : 8,
-          }]} />
-        ))}
+      {/* Progress Badge & Bar */}
+      <View style={styles.progressSection}>
+        <View style={styles.progressBarContainer}>
+          <View
+            style={[styles.progressBar, { width: `${((currentStep + 1) / steps.length) * 100}%`, height: 2, backgroundColor: '#7F77DD' }]}
+          />
+        </View>
       </View>
 
       {/* Main Content - Swipeable */}
       <Animated.View style={[styles.content, { transform: [{ translateX: slideAnim }] }]} {...panResponder.panHandlers}>
-        <Text style={[styles.stepNumber, { color: colors.primary }]}>BƯỚC {currentStep + 1} / {steps.length}</Text>
-
-        <ScrollView contentContainerStyle={styles.stepScrollContent} showsVerticalScrollIndicator={false}>
+        <View style={[styles.stepCard, { padding: 0 }]}>
+          {/* Main Step Image from API or Dish Image */}
+          <View style={styles.stepImageContainer}>
+            <RealImage 
+              query={dishName} 
+              initialUri={dishImage} 
+              style={styles.stepImage} 
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(30, 10, 60, 0.95)']}
+              style={styles.stepImageGradient}
+            />
+          </View>
+          <ScrollView contentContainerStyle={[styles.stepScrollContent, { padding: 20, paddingTop: 10 }]} showsVerticalScrollIndicator={false}>
           {/* Main Step Image from API */}
-          <RealImage 
-            query={`${dishName} ${steps[currentStep].substring(0, 30)}`}
-            isStep={true}
-            style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 16 }} 
-          />
+          {/* Step Indicator */}
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 13, color: '#A89FFF', fontWeight: '600' }}>Bước {currentStep + 1} / {steps.length}</Text>
+          </View>
 
           {highlightedCurrentStep}
 
@@ -368,27 +382,37 @@ export default function CookingModeScreen({ route, navigation }: Props) {
 
           {/* Smart Timer Button */}
           {detectedSeconds && !timerActive && (
-            <AnimatedButton
-              activeOpacity={0.7}
-              style={[styles.smartTimerBtn, { backgroundColor: `${colors.primary}15`, borderColor: colors.primary }]}
-              onPress={() => startTimer(detectedSeconds)}
-            >
-              <Ionicons name="timer" size={22} color={colors.primary} />
-              <Text style={[styles.smartTimerText, { color: colors.primary }]}>
-                Bắt đầu đếm ngược {formatTime(detectedSeconds)}
+            <View style={styles.timerRow}>
+              <Ionicons name="timer-outline" size={20} color={themeColors.purple} />
+              <Text style={[styles.timerRowText, { color: themeColors.textSecondary }]}>
+                Phát hiện: {formatTime(detectedSeconds)}
               </Text>
-            </AnimatedButton>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => startTimer(detectedSeconds)}
+                style={styles.timerStartBtn}
+              >
+                <LinearGradient
+                  colors={['#7c3aed', '#a855f7']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.timerStartGradient}
+                >
+                  <Text style={styles.timerStartText}>Bắt đầu</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           )}
 
           {/* Active Timer Display */}
           {timerActive && (
-            <View style={[styles.timerDisplay, { backgroundColor: timerRemaining <= 10 ? '#FF3B3015' : `${colors.primary}10`, borderColor: timerRemaining <= 10 ? '#FF3B30' : colors.primary }]}>
-              <Ionicons name="timer" size={24} color={timerRemaining <= 10 ? '#FF3B30' : colors.primary} />
-              <Text style={[styles.timerText, { color: timerRemaining <= 10 ? '#FF3B30' : colors.primary }]}>
+            <View style={[styles.timerDisplay, { backgroundColor: timerRemaining <= 10 ? 'rgba(255,100,200,0.1)' : `${themeColors.purple}10`, borderColor: timerRemaining <= 10 ? themeColors.pink : themeColors.purple }]}>
+              <Ionicons name="timer" size={24} color={timerRemaining <= 10 ? themeColors.pink : themeColors.purple} />
+              <Text style={[styles.timerText, { color: timerRemaining <= 10 ? themeColors.pink : themeColors.purple }]}>
                 {formatTime(timerRemaining)}
               </Text>
               <AnimatedButton activeOpacity={0.7} onPress={stopTimer} style={styles.timerStopBtn}>
-                <Ionicons name="close-circle" size={28} color={colors.textSecondary} />
+                <Ionicons name="close-circle" size={28} color={themeColors.textSecondary} />
               </AnimatedButton>
             </View>
           )}
@@ -396,101 +420,108 @@ export default function CookingModeScreen({ route, navigation }: Props) {
           {/* Next Step Preview */}
           {currentStep < steps.length - 1 && (
             <View style={styles.nextPreview}>
-              <Text style={[styles.nextLabel, { color: colors.textSecondary }]}>TIẾP THEO:</Text>
-              <Text style={[styles.nextText, { color: colors.textSecondary }]} numberOfLines={2}>
+              <Text style={[styles.nextLabel, { color: themeColors.textSecondary }]}>TIẾP THEO:</Text>
+              <Text style={[styles.nextText, { color: themeColors.textSecondary }]} numberOfLines={2}>
                 {steps[currentStep + 1]}
               </Text>
             </View>
           )}
         </ScrollView>
+        </View>
       </Animated.View>
 
-      {/* Contextual Quick Action Bar (fix: ScrollView ngang tránh tràn) */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.quickBar, { borderTopColor: colors.border }]} style={{ flexGrow: 0, borderTopWidth: 1, borderTopColor: colors.border }}>
-        {ingredients && ingredients.length > 0 && (
-          <AnimatedButton activeOpacity={0.7} style={[styles.quickAction, { backgroundColor: `${colors.success}12` }]} onPress={() => setShowIngredients(true)}>
-            <Ionicons name="list" size={18} color={colors.success} />
-            <Text style={[styles.quickActionText, { color: colors.success }]}>Nguyên liệu</Text>
-          </AnimatedButton>
-        )}
-        <AnimatedButton activeOpacity={0.7} style={[styles.quickAction, { backgroundColor: '#FF000012' }]} onPress={searchYouTube}>
-          <Ionicons name="logo-youtube" size={18} color="#FF0000" />
-          <Text style={[styles.quickActionText, { color: '#FF0000' }]}>Video</Text>
-        </AnimatedButton>
-        <AnimatedButton activeOpacity={0.7} style={[styles.quickAction, { backgroundColor: `${colors.primary}12` }]} onPress={takeStepPhoto}>
-          <Ionicons name="camera" size={18} color={colors.primary} />
-          <Text style={[styles.quickActionText, { color: colors.primary }]}>{totalPhotos > 0 ? `${totalPhotos} ảnh` : 'Chụp'}</Text>
-        </AnimatedButton>
-        {totalPhotos > 0 && (
-          <AnimatedButton activeOpacity={0.7} style={[styles.quickAction, { backgroundColor: `${colors.textSecondary}12` }]} onPress={() => setShowPhotoDiary(true)}>
-            <Ionicons name="images" size={18} color={colors.textSecondary} />
-            <Text style={[styles.quickActionText, { color: colors.textSecondary }]}>Nhật ký</Text>
-          </AnimatedButton>
-        )}
-        {!!tips && (
-          <AnimatedButton activeOpacity={0.7} style={[styles.quickAction, { backgroundColor: `${colors.primary}12` }]} onPress={() => setShowTips(true)}>
-            <Ionicons name="bulb" size={18} color={colors.primary} />
-            <Text style={[styles.quickActionText, { color: colors.primary }]}>Mẹo</Text>
-          </AnimatedButton>
-        )}
-      </ScrollView>
+      {/* Action Tabs */}
+      <View style={styles.actionTabsContainer}>
+        <View style={styles.quickBar}>
+          <TouchableOpacity activeOpacity={0.75} style={styles.quickAction} onPress={() => setShowIngredients(true)}>
+            <Ionicons name="list" size={20} color={showIngredients ? "#7F77DD" : "rgba(255,255,255,0.4)"} />
+            <Text style={[styles.quickActionText, { color: showIngredients ? "#7F77DD" : "rgba(255,255,255,0.4)" }]}>Nguyên liệu</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity activeOpacity={0.75} style={styles.quickAction} onPress={searchYouTube}>
+            <Ionicons name="logo-youtube" size={20} color="rgba(255,255,255,0.4)" />
+            <Text style={[styles.quickActionText, { color: "rgba(255,255,255,0.4)" }]}>Video</Text>
+          </TouchableOpacity>
 
-      {/* Controls */}
-      <View style={styles.controls}>
-        <AnimatedButton activeOpacity={0.7} onPress={prevStep} style={[styles.smallControl, { opacity: currentStep === 0 ? 0.2 : 1 }]} disabled={currentStep === 0}>
-          <Ionicons name="play-back" size={32} color={colors.text} />
-        </AnimatedButton>
-
-        <View style={styles.mainControlWrapper}>
-          {isSpeaking && (
-            <Animated.View style={[styles.pulseRing, { backgroundColor: colors.primary, transform: [{ scale: pulseScale }], opacity: pulseOpacity }]} />
-          )}
-          <AnimatedButton activeOpacity={0.8} onPress={toggleSpeech} style={[styles.mainControl, { backgroundColor: colors.primary }]}>
-            <Ionicons name={isSpeaking ? "pause" : "volume-high"} size={40} color="#FFF" />
-          </AnimatedButton>
+          <TouchableOpacity activeOpacity={0.75} style={styles.quickAction} onPress={takeStepPhoto}>
+            <Ionicons name="camera" size={20} color="rgba(255,255,255,0.4)" />
+            <Text style={[styles.quickActionText, { color: "rgba(255,255,255,0.4)" }]}>Chụp</Text>
+          </TouchableOpacity>
         </View>
+      </View>
 
-        <AnimatedButton activeOpacity={0.7} onPress={nextStep} style={styles.smallControl}>
-          <Ionicons name="play-forward" size={32} color={colors.text} />
-        </AnimatedButton>
+      {/* Step Navigator - Fixed UI */}
+      <View style={styles.stepNavigator}>
+        <TouchableOpacity 
+          activeOpacity={0.75} 
+          onPress={prevStep} 
+          disabled={currentStep === 0}
+          style={[styles.navBtn, currentStep === 0 && { opacity: 0.3 }]}
+        >
+          <Ionicons name="arrow-back" size={20} color="#E0DEFF" />
+          <Text style={styles.navLabel}>Bước trước</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          activeOpacity={0.8} 
+          onPress={toggleSpeech} 
+          style={styles.voiceBtn}
+        >
+          <Ionicons name={isSpeaking ? "pause" : "volume-high"} size={24} color="#FFF" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          activeOpacity={0.75} 
+          onPress={nextStep} 
+          style={[styles.navBtn, currentStep === steps.length - 1 ? styles.completeBtn : {}]}
+        >
+          <Text style={[styles.navLabel, currentStep === steps.length - 1 ? { color: '#FFF' } : {}]}>
+            {currentStep === steps.length - 1 ? 'Hoàn thành' : 'Bước tiếp'}
+          </Text>
+          <Ionicons 
+            name={currentStep === steps.length - 1 ? "checkmark-circle" : "arrow-forward"} 
+            size={20} 
+            color={currentStep === steps.length - 1 ? "#FFF" : "#E0DEFF"} 
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Footer Indicators */}
       <View style={styles.footer}>
         <AnimatedButton onPress={() => setShakeEnabled(!shakeEnabled)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Ionicons name={shakeEnabled ? 'phone-portrait' : 'phone-portrait-outline'} size={12} color={shakeEnabled ? colors.primary : colors.textSecondary} />
-          <Text style={{ fontSize: 10, color: shakeEnabled ? colors.primary : colors.textSecondary }}>Lắc: {shakeEnabled ? 'BẬT' : 'TẮT'}</Text>
+          <Ionicons name={shakeEnabled ? 'phone-portrait' : 'phone-portrait-outline'} size={12} color={shakeEnabled ? themeColors.purple : themeColors.textSecondary} />
+          <Text style={{ fontSize: 10, color: shakeEnabled ? themeColors.purple : themeColors.textSecondary }}>Lắc: {shakeEnabled ? 'BẬT' : 'TẮT'}</Text>
         </AnimatedButton>
-        <Text style={{ fontSize: 10, color: colors.textSecondary, marginLeft: 16 }}>Vuốt trái/phải để chuyển bước</Text>
+        <Text style={{ fontSize: 10, color: themeColors.textSecondary, marginLeft: 16 }}>Vuốt trái/phải để chuyển bước</Text>
       </View>
 
       {/* Ingredients Modal with Portion Scaling */}
       <Modal visible={showIngredients} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <View style={[styles.bottomSheet, { ...borderPresets.cardPurple, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, backgroundColor: themeColors.bgBottomNav }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: themeColors.borderCard }]} />
             <View style={styles.sheetHeader}>
-              <Text style={[typography.h2, { color: colors.text }]}>Nguyên liệu</Text>
+              <Text style={[typography.h2, { color: themeColors.textPrimary }]}>Nguyên liệu</Text>
               <AnimatedButton activeOpacity={0.7} onPress={() => setShowIngredients(false)}>
-                <Ionicons name="close-circle" size={30} color={colors.textSecondary} />
+                <Ionicons name="close-circle" size={30} color={themeColors.textSecondary} />
               </AnimatedButton>
             </View>
             {/* Portion Scaling Controls */}
-            <View style={[styles.portionRow, { borderColor: colors.border }]}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Khẩu phần:</Text>
+            <View style={[styles.portionRow, { borderColor: themeColors.borderCard }]}>
+              <Text style={[typography.caption, { color: themeColors.textSecondary }]}>Khẩu phần:</Text>
               {[0.5, 1, 2, 3].map(m => (
                 <AnimatedButton key={m} activeOpacity={0.7} onPress={() => setPortionMultiplier(m)}
-                  style={[styles.portionBtn, { backgroundColor: portionMultiplier === m ? colors.primary : `${colors.primary}15` }]}>
-                  <Text style={{ color: portionMultiplier === m ? '#FFF' : colors.primary, fontWeight: 'bold', fontSize: 13 }}>x{m}</Text>
+                  style={[styles.portionBtn, { backgroundColor: portionMultiplier === m ? themeColors.purple : `${themeColors.purple}15` }]}>
+                  <Text style={{ color: portionMultiplier === m ? themeColors.textPrimary : themeColors.purple, fontWeight: 'bold', fontSize: 13 }}>x{m}</Text>
                 </AnimatedButton>
               ))}
             </View>
             <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator={false}>
-              {(ingredients || []).map((ing, i) => (
-                <View key={i} style={[styles.ingredientRow, { borderBottomColor: colors.border }]}>
-                  <View style={[styles.ingredientDot, { backgroundColor: colors.primary }]} />
-                  <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{scaleIngredient(ing)}</Text>
-                  {portionMultiplier !== 1 && <Text style={{ fontSize: 11, color: colors.textSecondary }}>x{portionMultiplier}</Text>}
+              {(ingredients || []).map((ing: string, i: number) => (
+                <View key={i} style={[styles.ingredientRow, { borderBottomColor: themeColors.borderCard }]}>
+                  <View style={[styles.ingredientDot, { backgroundColor: themeColors.purple }]} />
+                  <Text style={[typography.body, { color: themeColors.textPrimary, flex: 1 }]}>{scaleIngredient(ing)}</Text>
+                  {portionMultiplier !== 1 && <Text style={{ fontSize: 11, color: themeColors.textSecondary }}>x{portionMultiplier}</Text>}
                 </View>
               ))}
             </ScrollView>
@@ -501,18 +532,18 @@ export default function CookingModeScreen({ route, navigation }: Props) {
       {/* Tips Modal (fix: overlay có thể nhấn để đóng, card dùng layout thường thay vì absolute) */}
       <Modal visible={showTips} transparent animationType="fade">
         <TouchableOpacity activeOpacity={1} onPress={() => setShowTips(false)} style={styles.tipsOverlay}>
-          <TouchableOpacity activeOpacity={1} style={[styles.tipsCard, { backgroundColor: colors.card }]}>
-            <View style={[styles.tipsIconBg, { backgroundColor: `${colors.primary}15` }]}>
-              <Ionicons name="bulb" size={32} color={colors.primary} />
+          <TouchableOpacity activeOpacity={1} style={[styles.tipsCard, { ...glass.card, backgroundColor: themeColors.bgBottomNav }]}>
+            <View style={[styles.tipsIconBg, { backgroundColor: `${themeColors.purple}15` }]}>
+              <Ionicons name="bulb" size={32} color={themeColors.purple} />
             </View>
-            <Text style={[typography.h3, { color: colors.text, marginTop: 16, marginBottom: 12, textAlign: 'center' }]}>Mẹo nấu ăn</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 24, textAlign: 'center' }]}>{tips}</Text>
+            <Text style={[typography.h3, { color: themeColors.textPrimary, marginTop: 16, marginBottom: 12, textAlign: 'center' }]}>Mẹo nấu ăn</Text>
+            <Text style={[typography.body, { color: themeColors.textSecondary, lineHeight: 24, textAlign: 'center' }]}>{tips}</Text>
             <AnimatedButton
               activeOpacity={0.7}
-              style={[styles.tipsCloseBtn, { backgroundColor: colors.primary }]}
+              style={[styles.tipsCloseBtn, { backgroundColor: themeColors.purple, ...glow.button, shadowColor: themeColors.purple }]}
               onPress={() => setShowTips(false)}
             >
-              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Xong</Text>
+              <Text style={{ color: themeColors.textPrimary, fontWeight: 'bold', fontSize: 16 }}>Xong</Text>
             </AnimatedButton>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -521,18 +552,18 @@ export default function CookingModeScreen({ route, navigation }: Props) {
       {/* Photo Diary Modal */}
       <Modal visible={showPhotoDiary} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card }]}>
+          <View style={[styles.bottomSheet, { ...borderPresets.cardPurple, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, backgroundColor: themeColors.bgBottomNav }]}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
-              <Text style={[typography.h2, { color: colors.text }]}>Nhật ký nấu ăn</Text>
+              <Text style={[typography.h2, { color: themeColors.textPrimary }]}>Nhật ký nấu ăn</Text>
               <AnimatedButton activeOpacity={0.7} onPress={() => setShowPhotoDiary(false)}>
-                <Ionicons name="close-circle" size={30} color={colors.textSecondary} />
+                <Ionicons name="close-circle" size={30} color={themeColors.textSecondary} />
               </AnimatedButton>
             </View>
             <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-              {steps.map((step, si) => (
+              {steps.map((step: string, si: number) => (
                 <View key={si}>
-                  <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: 'bold', marginTop: 12 }]}>Bước {si + 1}</Text>
+                  <Text style={[typography.caption, { color: themeColors.textSecondary, fontWeight: 'bold', marginTop: 12 }]}>Bước {si + 1}</Text>
                   {stepPhotos[si] && stepPhotos[si].length > 0 ? (
                     <View style={styles.photoRow}>
                       {stepPhotos[si].map((uri, pi) => (
@@ -540,7 +571,7 @@ export default function CookingModeScreen({ route, navigation }: Props) {
                       ))}
                     </View>
                   ) : (
-                    <Text style={{ color: colors.border, fontSize: 13, fontStyle: 'italic' }}>Chưa có ảnh</Text>
+                    <Text style={{ color: themeColors.borderCard, fontSize: 13, fontStyle: 'italic' }}>Chưa có ảnh</Text>
                   )}
                 </View>
               ))}
@@ -556,72 +587,218 @@ export default function CookingModeScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  
+  // Ambient Orbs
+  orb1: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(130,40,255,0.18)',
+    top: -60,
+    left: -60,
+    zIndex: 0,
+  },
+  orb2: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(200,40,220,0.14)',
+    top: 100,
+    right: -50,
+    zIndex: 0,
+  },
+  orb3: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(110,30,220,0.10)',
+    top: '55%',
+    left: -40,
+    zIndex: 0,
+  },
+  
   header: {
-    height: 70, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', paddingHorizontal: 20,
+    height: 70,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    borderBottomWidth: borderWidth.thin,
+    borderBottomColor: borderColors.purple.subtle,
   },
   headerTitleBox: { flex: 1, alignItems: 'center', paddingHorizontal: 10 },
-  closeBtn: { padding: 4 },
-  headerIconBtn: { alignItems: 'center', justifyContent: 'center', width: 40 },
-  progressBarContainer: { height: 4, width: '100%' },
-  progressBar: { height: '100%' },
-  stepDotsRow: {
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-    paddingVertical: 10, gap: 6,
+  closeBtn: {
+    padding: 8,
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    ...borderPresets.button,
   },
-  stepDot: { height: 8, borderRadius: 4 },
-  content: { flex: 1, paddingHorizontal: 30, paddingTop: 10 },
-  stepNumber: { fontSize: 14, fontWeight: '900', letterSpacing: 2, marginBottom: 16, textAlign: 'center' },
+  headerIconBtn: { alignItems: 'center', justifyContent: 'center', width: 40 },
+  
+  // Progress Section
+  progressSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  stepBadge: {
+    alignSelf: 'center',
+    ...borderPresets.chip,
+    backgroundColor: 'rgba(168,85,247,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 10,
+  },
+  stepBadgeText: {
+    color: '#d8b4fe',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  progressBarContainer: {
+    height: 4,
+    width: '100%',
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    borderRadius: borderRadius.xs,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: borderRadius.xs,
+  },
+  
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 10, zIndex: 1 },
+  
+  // Step Card
+  stepCard: {
+    flex: 1,
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    ...borderPresets.cardPurple,
+    shadowColor: '#a855f7',
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 6,
+    overflow: 'hidden',
+  },
+  
+  stepImageContainer: { height: 180, width: '100%', position: 'relative' },
+  stepImage: { width: '100%', height: '100%' },
+  stepImageGradient: { ...StyleSheet.absoluteFillObject },
+  
   stepScrollContent: { flexGrow: 1, justifyContent: 'center', paddingBottom: 10 },
   stepText: { fontWeight: '700', textAlign: 'center' },
-  // Smart Timer
-  smartTimerBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 14, paddingHorizontal: 20, borderRadius: 16,
-    borderWidth: 1.5, borderStyle: 'dashed', marginTop: 24, gap: 10,
+  
+  // Timer Row
+  timerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...borderPresets.cardPurple,
+    padding: 12,
+    marginTop: 20,
+    gap: 10,
   },
-  smartTimerText: { fontSize: 16, fontWeight: '700' },
+  timerRowText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  timerStartBtn: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    shadowColor: '#a855f7',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  timerStartGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  timerStartText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  
   timerDisplay: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 16, paddingHorizontal: 20, borderRadius: 20,
-    borderWidth: 2, marginTop: 24, gap: 12,
+    paddingVertical: 16, paddingHorizontal: 20, borderRadius: borderRadius.xl,
+    borderWidth: borderWidth.heavy, marginTop: 24, gap: 12,
   },
   timerText: { fontSize: 36, fontWeight: '900', fontVariant: ['tabular-nums'] },
   timerStopBtn: { marginLeft: 8 },
+  
   // Next preview
   nextPreview: { marginTop: 40, alignItems: 'center', opacity: 0.4 },
   nextLabel: { fontSize: 12, fontWeight: 'bold', letterSpacing: 1.5, marginBottom: 14 },
   nextText: { fontSize: 16, textAlign: 'center', fontStyle: 'italic', paddingHorizontal: 20, lineHeight: 24 },
-  // Quick Action Bar
+  
+  actionTabsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
   quickBar: {
-    flexDirection: 'row', justifyContent: 'center', gap: 10,
-    paddingVertical: 10, paddingHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
   },
   quickAction: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
-    paddingHorizontal: 14, borderRadius: 20, gap: 6,
+    alignItems: 'center',
+    gap: 4,
   },
-  quickActionText: { fontSize: 13, fontWeight: '600' },
-  // Controls
-  controls: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-evenly', paddingVertical: 20,
+  quickActionText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
   },
-  mainControlWrapper: {
-    width: 100, height: 100, justifyContent: 'center',
-    alignItems: 'center', position: 'relative',
+
+  // Step Navigator
+  stepNavigator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#1A0B3B',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
-  pulseRing: { position: 'absolute', width: 100, height: 100, borderRadius: 50 },
-  mainControl: {
-    width: 90, height: 90, borderRadius: 45,
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#FF9500', shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4, shadowRadius: 20, elevation: 10, zIndex: 2,
+  navBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    gap: 8,
+    minWidth: 100,
+    justifyContent: 'center',
   },
-  smallControl: {
-    width: 60, height: 60, borderRadius: 30,
-    justifyContent: 'center', alignItems: 'center',
+  completeBtn: {
+    backgroundColor: '#10b981',
   },
+  navLabel: {
+    color: '#E0DEFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  voiceBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#7F77DD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#7F77DD',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  
   footer: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', paddingBottom: 20,
@@ -632,11 +809,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   bottomSheet: {
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    borderTopLeftRadius: borderRadius['3xl'], borderTopRightRadius: borderRadius['3xl'],
     padding: 24, paddingBottom: 40,
   },
   sheetHandle: {
-    width: 40, height: 5, borderRadius: 3,
+    width: 40, height: 5, borderRadius: borderRadius.xs,
     alignSelf: 'center', marginBottom: 16,
   },
   sheetHeader: {
@@ -645,44 +822,50 @@ const styles = StyleSheet.create({
   },
   ingredientRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 14, borderBottomWidth: 1, gap: 12,
+    paddingVertical: 14, borderBottomWidth: borderWidth.normal, gap: 12,
   },
-  ingredientDot: { width: 8, height: 8, borderRadius: 4 },
+  ingredientDot: { width: 8, height: 8, borderRadius: borderRadius.xs },
   tipsOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center', alignItems: 'center', padding: 24,
   },
   tipsCard: {
-    width: '100%', borderRadius: 28, padding: 30, alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.15, shadowRadius: 30, elevation: 20,
+    width: '100%', 
+    padding: 30, 
+    alignItems: 'center',
+    backgroundColor: 'rgba(30, 10, 60, 0.95)',
+    ...borderPresets.cardPurple,
+    shadowColor: '#a855f7',
+    shadowOpacity: 0.25,
+    shadowRadius: 30,
+    elevation: 20,
   },
   tipsIconBg: {
-    width: 64, height: 64, borderRadius: 32,
+    width: 64, height: 64, borderRadius: borderRadius.full,
     justifyContent: 'center', alignItems: 'center',
   },
   tipsCloseBtn: {
     marginTop: 24, paddingVertical: 14, paddingHorizontal: 40,
-    borderRadius: 25,
+    borderRadius: borderRadius['2xl'],
   },
   // Photos
   photoRow: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16,
   },
   photoThumb: {
-    width: 56, height: 56, borderRadius: 12,
+    width: 56, height: 56, borderRadius: borderRadius.md,
   },
   diaryPhoto: {
-    width: 80, height: 80, borderRadius: 12,
+    width: 80, height: 80, borderRadius: borderRadius.md,
   },
   // Portion Scaling
   portionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingVertical: 12, marginBottom: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: borderWidth.normal,
   },
   portionBtn: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16,
+    paddingHorizontal: 14, paddingVertical: 6, borderRadius: borderRadius.lg,
   },
 });
 

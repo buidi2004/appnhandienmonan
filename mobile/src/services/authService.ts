@@ -1,7 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type AuthUser = {
+  uid: string;
   email?: string;
+  displayName?: string;
+  photoURL?: string;
   getIdToken: () => Promise<string>;
 };
 
@@ -17,7 +20,10 @@ export const auth = {
 const tokenFor = (email: string) => `local-token:${email}:${Date.now()}`;
 
 const buildUser = (email: string, token: string): AuthUser => ({
+  uid: email,
   email,
+  displayName: email.split('@')[0],
+  photoURL: `https://i.pravatar.cc/150?u=${email}`,
   getIdToken: async () => token,
 });
 

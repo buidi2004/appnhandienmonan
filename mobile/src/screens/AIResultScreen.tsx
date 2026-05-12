@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -27,7 +27,7 @@ import API_CONFIG from '../config/apiConfig';
 import { RealImage, SafeImage, fetchImageUrl } from '../components/RealImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedButton from '../components/AnimatedButton';
-import GlassCard from '../components/GlassCard';
+import GlassCard from '../components/ui/GlassCard';
 import EmptyState from '../components/EmptyState';
 
 const { width, height } = Dimensions.get('window');
@@ -60,7 +60,9 @@ interface Recipe {
 
 export default function AIResultScreen({ route, navigation }: Props) {
   const { colors, typography, spacing, borderRadius } = useAppTheme();
-  const { imageUri, initialIngredients, initialRecipe } = route.params;
+  const imageUri = route.params?.imageUri;
+  const initialIngredients = route.params?.initialIngredients;
+  const initialRecipe = route.params?.initialRecipe;
   const [isScanning, setIsScanning] = useState(!initialRecipe);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Đang khởi tạo...');
@@ -69,7 +71,7 @@ export default function AIResultScreen({ route, navigation }: Props) {
 
   // Hiệu ứng xoay vòng thông báo loading để tăng cảm giác phản hồi nhanh
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (isSuggesting || isScanning) {
       const messages = isScanning 
         ? ['Đang gửi ảnh lên máy chủ...', 'Đang nhận diện từng nguyên liệu...', 'Sắp xong rồi...']
@@ -133,8 +135,24 @@ export default function AIResultScreen({ route, navigation }: Props) {
   const checkIfBookmarked = async (recipeList: Recipe[]) => {
     try {
       const user = auth.currentUser;
-      const token = await user?.getIdToken();
       
+      // Nếu không có user, sử dụng local storage ngay lập tức và thoát
+      if (!user) {
+        const stored = await AsyncStorage.getItem('favorites');
+        if (stored) {
+          const currentFavorites = JSON.parse(stored);
+          const newBookmarked: Record<number, boolean> = {};
+          recipeList.forEach((recipe, index) => {
+            if (currentFavorites.some((f: any) => f.title === recipe.title)) {
+              newBookmarked[index] = true;
+            }
+          });
+          setBookmarked(newBookmarked);
+        }
+        return;
+      }
+
+      const token = await user.getIdToken();
       const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -150,8 +168,12 @@ export default function AIResultScreen({ route, navigation }: Props) {
       
       // Sync lại local cho chắc chắn
       await AsyncStorage.setItem('favorites', JSON.stringify(currentFavorites));
-    } catch (e) {
-      console.error('Check Bookmark Error (DB failed, falling back to local):', e);
+    } catch (e: any) {
+      // Chỉ log lỗi nếu không phải là lỗi 401 (do token hết hạn hoặc chưa login)
+      if (e.response?.status !== 401) {
+        console.error('Check Bookmark Error (DB failed, falling back to local):', e);
+      }
+      
       // Fallback local
       const stored = await AsyncStorage.getItem('favorites');
       if (stored) {
@@ -202,8 +224,13 @@ export default function AIResultScreen({ route, navigation }: Props) {
       const user = auth.currentUser;
       const token = await user?.getIdToken();
       
+      const headers: any = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SUGGEST_RECIPES}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: headers
       });
       
       if (response.data && response.data.recipes) {
@@ -244,12 +271,16 @@ export default function AIResultScreen({ route, navigation }: Props) {
       const user = auth.currentUser;
       const token = await user?.getIdToken();
 
+      const headers: any = {
+        'Content-Type': 'multipart/form-data'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       // Bước 1: Chỉ quét nguyên liệu (Nhanh)
       const scanResponse = await axios.post(scanUrl, formData, {
-        headers: { 
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: headers,
         onUploadProgress: (progressEvent) => {
           const percent = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
           setLoadingMessage(`Đang tải ảnh: ${percent}%`);
@@ -278,8 +309,13 @@ export default function AIResultScreen({ route, navigation }: Props) {
           payload.health_profile = healthProfile;
         }
 
+        const headers: any = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const suggestResponse = await axios.post(suggestUrl, payload, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: headers
         });
         
         if (suggestResponse.data && suggestResponse.data.recipes) {
@@ -327,7 +363,20 @@ export default function AIResultScreen({ route, navigation }: Props) {
     const recipe = recipes[index];
     try {
       const user = auth.currentUser;
-      const token = await user?.getIdToken();
+      
+      if (!user) {
+        AlertManager.alert(
+          'Yêu cầu đăng nhập',
+          'Vui lòng đăng nhập để lưu món ăn vào mục yêu thích.',
+          [
+            { text: 'Hủy', style: 'cancel' },
+            { text: 'Đăng nhập', onPress: () => navigation.navigate('Auth') }
+          ]
+        );
+        return;
+      }
+      
+      const token = await user.getIdToken();
       
       // Lấy danh sách hiện tại để xử lý xóa nếu cần
       const response = await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, {
@@ -336,9 +385,14 @@ export default function AIResultScreen({ route, navigation }: Props) {
       let currentFavorites = response.data || [];
       
       if (!bookmarked[index]) {
-        // ... (existing logic)
         const newFav = { 
-          // ... (existing logic)
+          title: recipe.title,
+          imageUrl: recipe.imageUrl,
+          ingredients: recipe.ingredients,
+          instructions: recipe.instructions,
+          prep_time: recipe.prep_time,
+          difficulty: recipe.difficulty,
+          calories: recipe.calories,
         };
         
         await axios.post(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.FAVORITES}`, newFav, {
@@ -462,8 +516,17 @@ export default function AIResultScreen({ route, navigation }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Collapsible Header */}
-      <Animated.View style={[styles.header, { height: HEADER_MAX_HEIGHT, transform: [{ translateY: headerTranslateY }], zIndex: 10 }]}>
-        <Animated.Image source={{ uri: imageUri || (recipes.length > 0 ? recipes[0].imageUrl : undefined) }} style={[styles.headerImage, { opacity: imageOpacity }]} />
+      <Animated.View style={[styles.header, { height: HEADER_MAX_HEIGHT, transform: [{ translateY: headerTranslateY }], zIndex: 10, backgroundColor: colors.card, overflow: 'hidden' }]}>
+        <LinearGradient 
+          colors={[colors.primaryMuted || '#4c1d95', colors.primary || '#7c3aed']} 
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <Animated.Image 
+          source={{ uri: imageUri || (recipes.length > 0 ? recipes[0].imageUrl : undefined) }} 
+          style={[styles.headerImage, { opacity: imageOpacity }]} 
+        />
         {/* Back Button */}
         <AnimatedButton 
           activeOpacity={0.7}
@@ -860,6 +923,7 @@ export default function AIResultScreen({ route, navigation }: Props) {
                     dishName: selectedRecipe.title,
                     ingredients: selectedRecipe.ingredients,
                     tips: selectedRecipe.tips,
+                    dishImage: selectedRecipe.imageUrl
                   });
                 }
               }}

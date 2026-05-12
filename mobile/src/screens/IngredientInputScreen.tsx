@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Dimensions, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedButton from '../components/AnimatedButton';
 import AlertManager from '../components/CustomAlert';
+import { themeColors, gradients, glass, glow, borderRadius } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IngredientInput'>;
 const { width } = Dimensions.get('window');
@@ -99,36 +100,36 @@ export default function IngredientInputScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       {/* Header */}
       <View style={styles.header}>
-        <AnimatedButton activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+        <AnimatedButton activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <Ionicons name="arrow-back" size={20} color={themeColors.textPrimary} />
         </AnimatedButton>
         <View style={{ flex: 1 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Title */}
-        <Text style={[styles.screenTitle, { color: colors.text }]}>Bạn còn gì{'\n'}trong bếp?</Text>
-        <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.screenTitle, { color: themeColors.textPrimary }]}>Bạn còn gì{'\n'}trong bếp?</Text>
+        <Text style={[styles.screenSubtitle, { color: themeColors.textSecondary }]}>
           Chọn nguyên liệu đang có, AI sẽ ưu tiên món nấu được ngay và báo phần còn thiếu.
         </Text>
 
         {/* Search Input */}
-        <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: query ? colors.primary : 'transparent' }]}>
-          <Ionicons name="search" size={18} color={colors.textSecondary} />
+        <View style={[styles.searchBox, { ...glass.card, backgroundColor: themeColors.bgCard, borderColor: query ? themeColors.purple : themeColors.borderCard }]}>
+          <Ionicons name="search" size={18} color={themeColors.textSecondary} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            style={[styles.searchInput, { color: themeColors.textPrimary }]}
             placeholder="VD: trứng, cà chua, thịt bò..."
-            placeholderTextColor={`${colors.textSecondary}80`}
+            placeholderTextColor={`${themeColors.textSecondary}80`}
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={addCustomIngredient}
             returnKeyType="done"
           />
           {query.length > 0 && (
-            <AnimatedButton activeOpacity={0.7} onPress={addCustomIngredient} style={[styles.addBtn, { backgroundColor: colors.primary }]}>
+            <AnimatedButton activeOpacity={0.7} onPress={addCustomIngredient} style={[styles.addBtn, { backgroundColor: themeColors.purple }]}>
               <Ionicons name="add" size={18} color="#FFF" />
             </AnimatedButton>
           )}
@@ -136,17 +137,17 @@ export default function IngredientInputScreen({ navigation }: Props) {
 
         {/* Autocomplete Suggestions */}
         {suggestions.length > 0 && (
-          <View style={[styles.suggestionsBox, { backgroundColor: colors.card }]}>
+          <View style={[styles.suggestionsBox, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
             {suggestions.slice(0, 5).map((s, i) => (
               <AnimatedButton
                 key={i}
                 activeOpacity={0.7}
-                style={[styles.suggestionItem, { borderBottomColor: `${colors.border}40` }]}
+                style={[styles.suggestionItem, { borderBottomColor: `${themeColors.borderCard}40` }]}
                 onPress={() => { toggleIngredient(s.name); setQuery(''); Keyboard.dismiss(); }}
               >
                 <Ionicons name={s.icon as any} size={18} color={s.color} />
-                <Text style={[styles.suggestionText, { color: colors.text }]}>{s.name}</Text>
-                {selected.includes(s.name) && <Ionicons name="checkmark" size={18} color={colors.primary} />}
+                <Text style={[styles.suggestionText, { color: themeColors.textPrimary }]}>{s.name}</Text>
+                {selected.includes(s.name) && <Ionicons name="checkmark" size={18} color={themeColors.purple} />}
               </AnimatedButton>
             ))}
           </View>
@@ -156,11 +157,11 @@ export default function IngredientInputScreen({ navigation }: Props) {
         {selected.length > 0 && (
           <View style={styles.selectedSection}>
             <View style={styles.selectedHeader}>
-              <Text style={[styles.selectedLabel, { color: colors.text }]}>
+              <Text style={[styles.selectedLabel, { color: themeColors.textPrimary }]}>
                 Đã chọn ({selected.length})
               </Text>
               <AnimatedButton onPress={() => setSelected([])}>
-                <Text style={[styles.clearText, { color: colors.textSecondary }]}>Xóa hết</Text>
+                <Text style={[styles.clearText, { color: themeColors.textSecondary }]}>Xóa hết</Text>
               </AnimatedButton>
             </View>
             <View style={styles.chipGrid}>
@@ -168,11 +169,11 @@ export default function IngredientInputScreen({ navigation }: Props) {
                 <AnimatedButton
                   key={i}
                   activeOpacity={0.7}
-                  style={[styles.selectedChip, { backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}30` }]}
+                  style={[styles.selectedChip, { backgroundColor: `${themeColors.purple}12`, borderColor: `${themeColors.purple}30` }]}
                   onPress={() => toggleIngredient(item)}
                 >
-                  <Text style={[styles.chipText, { color: colors.primary }]}>{item}</Text>
-                  <Ionicons name="close" size={14} color={colors.primary} style={{ marginLeft: 6 }} />
+                  <Text style={[styles.chipText, { color: themeColors.purple }]}>{item}</Text>
+                  <Ionicons name="close" size={14} color={themeColors.purple} style={{ marginLeft: 6 }} />
                 </AnimatedButton>
               ))}
             </View>
@@ -181,7 +182,7 @@ export default function IngredientInputScreen({ navigation }: Props) {
 
         {/* Popular Ingredients */}
         <View style={styles.popularSection}>
-          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>GỢI Ý NHANH</Text>
+          <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>GỢI Ý NHANH</Text>
           <View style={styles.popularGrid}>
             {POPULAR_INGREDIENTS.map((item, i) => {
               const isSelected = selected.includes(item.name);
@@ -192,14 +193,14 @@ export default function IngredientInputScreen({ navigation }: Props) {
                   style={[
                     styles.popularChip,
                     { 
-                      backgroundColor: isSelected ? `${colors.primary}12` : colors.card,
-                      borderColor: isSelected ? `${colors.primary}40` : 'transparent',
+                      backgroundColor: isSelected ? `${themeColors.purple}12` : themeColors.bgCard,
+                      borderColor: isSelected ? `${themeColors.purple}40` : 'transparent',
                     }
                   ]}
                   onPress={() => toggleIngredient(item.name)}
                 >
-                  <Ionicons name={item.icon as any} size={16} color={isSelected ? colors.primary : item.color} />
-                  <Text style={[styles.popularText, { color: isSelected ? colors.primary : colors.text }]}>{item.name}</Text>
+                  <Ionicons name={item.icon as any} size={16} color={isSelected ? themeColors.purple : item.color} />
+                  <Text style={[styles.popularText, { color: isSelected ? themeColors.purple : themeColors.textPrimary }]}>{item.name}</Text>
                 </AnimatedButton>
               );
             })}
@@ -209,17 +210,17 @@ export default function IngredientInputScreen({ navigation }: Props) {
         {/* Recent */}
         {recentIngredients.length > 0 && (
           <View style={styles.recentSection}>
-            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>ĐÃ DÙNG GẦN ĐÂY</Text>
+            <Text style={[styles.sectionLabel, { color: themeColors.textSecondary }]}>ĐÃ DÙNG GẦN ĐÂY</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {recentIngredients.filter(r => !selected.includes(r)).slice(0, 10).map((item, i) => (
                 <AnimatedButton
                   key={i}
                   activeOpacity={0.7}
-                  style={[styles.recentChip, { backgroundColor: colors.card }]}
+                  style={[styles.recentChip, { ...glass.card, backgroundColor: themeColors.bgCard }]}
                   onPress={() => toggleIngredient(item)}
                 >
-                  <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-                  <Text style={[styles.recentText, { color: colors.text }]}>{item}</Text>
+                  <Ionicons name="time-outline" size={14} color={themeColors.textSecondary} />
+                  <Text style={[styles.recentText, { color: themeColors.textPrimary }]}>{item}</Text>
                 </AnimatedButton>
               ))}
             </ScrollView>
@@ -231,16 +232,16 @@ export default function IngredientInputScreen({ navigation }: Props) {
 
       {/* Bottom CTA */}
       {selected.length > 0 && (
-        <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
+        <View style={[styles.bottomBar, { backgroundColor: themeColors.bgPrimary }]}>
           <AnimatedButton activeOpacity={0.85} onPress={handleSearch}>
             <LinearGradient
-              colors={[colors.primary, `${colors.primary}CC`]}
+              colors={gradients.button}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={[styles.searchBtn, { shadowColor: colors.primary }]}
+              style={[{ ...glow.button }, styles.searchBtn]}
             >
               <View style={styles.searchBtnIconWrapper}>
-                <Ionicons name="sparkles" size={16} color={colors.primary} />
+                <Ionicons name="add-circle-outline" size={16} color={themeColors.purple} />
               </View>
               <Text style={styles.searchBtnText}>
                 Dựng món từ {selected.length} nguyên liệu
@@ -264,13 +265,13 @@ const styles = StyleSheet.create({
   // Search
   searchBox: { 
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 4,
-    borderRadius: 16, borderWidth: 1.5, marginBottom: 8,
+    borderRadius: borderRadius.xl, borderWidth: 1.5, marginBottom: 8,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 14, marginLeft: 10 },
-  addBtn: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  addBtn: { width: 32, height: 32, borderRadius: borderRadius.md, justifyContent: 'center', alignItems: 'center' },
 
   // Suggestions
-  suggestionsBox: { borderRadius: 14, overflow: 'hidden', marginBottom: 16 },
+  suggestionsBox: { borderRadius: borderRadius.xl, overflow: 'hidden', marginBottom: 16 },
   suggestionItem: { 
     flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1,
   },
@@ -283,7 +284,7 @@ const styles = StyleSheet.create({
   clearText: { fontSize: 13, fontWeight: '600' },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   selectedChip: { 
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: borderRadius.lg, borderWidth: 1,
   },
   chipText: { fontSize: 14, fontWeight: '600' },
 
@@ -292,21 +293,21 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 14 },
   popularGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   popularChip: { 
-    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: borderRadius.lg, borderWidth: 1,
   },
   popularText: { fontSize: 13, fontWeight: '600' },
 
   // Recent
   recentSection: { marginBottom: 24 },
   recentChip: { 
-    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginRight: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: borderRadius.md, marginRight: 8,
   },
   recentText: { fontSize: 13, fontWeight: '500' },
 
   // Bottom
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 34 },
   searchBtn: { 
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 14, borderRadius: 30,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 14, borderRadius: borderRadius.xl,
     shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
   },
   searchBtnIconWrapper: {

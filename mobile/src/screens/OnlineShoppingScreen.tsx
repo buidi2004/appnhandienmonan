@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AlertManager from '../components/CustomAlert';
 import { LinearGradient } from 'expo-linear-gradient';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OnlineShopping'>;
 const { width } = Dimensions.get('window');
@@ -44,31 +45,31 @@ export default function OnlineShoppingScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <Ionicons name="arrow-back" size={20} color={themeColors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Title */}
-        <Text style={[styles.screenTitle, { color: colors.text }]}>Mua nguyên liệu</Text>
-        <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.screenTitle, { color: themeColors.textPrimary }]}>Mua nguyên liệu</Text>
+        <Text style={[styles.screenSubtitle, { color: themeColors.textSecondary }]}>
           Chọn đối tác giao hàng và mua nguyên liệu tươi ngon giao tận nhà
         </Text>
 
         {/* Quick Categories */}
         <View style={styles.categoriesSection}>
-          <Text style={[styles.catLabel, { color: colors.textSecondary }]}>Bạn cần mua gì?</Text>
+          <Text style={[styles.catLabel, { color: themeColors.textSecondary }]}>Bạn cần mua gì?</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
             {QUICK_CATEGORIES.map((cat, i) => (
               <TouchableOpacity
                 key={i}
                 activeOpacity={0.7}
-                style={[styles.categoryChip, { backgroundColor: colors.card }]}
+                style={[styles.categoryChip, { ...glass.card, backgroundColor: themeColors.bgCard }]}
                 onPress={() => {
                   Linking.openURL(`https://www.google.com/search?q=mua+${cat.label}+online+gần+tôi`);
                 }}
@@ -76,19 +77,19 @@ export default function OnlineShoppingScreen({ navigation }: Props) {
                 <View style={[styles.catIconBg, { backgroundColor: `${cat.color}12` }]}>
                   <Ionicons name={cat.icon as any} size={20} color={cat.color} />
                 </View>
-                <Text style={[styles.catName, { color: colors.text }]}>{cat.label}</Text>
+                <Text style={[styles.catName, { color: themeColors.textPrimary }]}>{cat.label}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
         {/* Partners */}
-        <Text style={[styles.partnersLabel, { color: colors.text }]}>Đối tác giao hàng</Text>
+        <Text style={[styles.partnersLabel, { color: themeColors.textPrimary }]}>Đối tác giao hàng</Text>
         {PARTNERS.map(partner => (
           <TouchableOpacity
             key={partner.id}
             activeOpacity={0.7}
-            style={[styles.partnerCard, { backgroundColor: colors.card }]}
+            style={[styles.partnerCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}
             onPress={() => openPartner(partner.url, partner.name)}
           >
             <View style={[styles.partnerIcon, { backgroundColor: `${partner.color}10` }]}>
@@ -96,25 +97,25 @@ export default function OnlineShoppingScreen({ navigation }: Props) {
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={[styles.partnerName, { color: colors.text }]}>{partner.name}</Text>
+                <Text style={[styles.partnerName, { color: themeColors.textPrimary }]}>{partner.name}</Text>
                 {!!partner.tag && (
                   <View style={[styles.partnerTag, { backgroundColor: `${partner.color}15` }]}>
                     <Text style={[styles.partnerTagText, { color: partner.color }]}>{partner.tag}</Text>
                   </View>
                 )}
               </View>
-              <Text style={[styles.partnerDesc, { color: colors.textSecondary }]}>{partner.desc}</Text>
+              <Text style={[styles.partnerDesc, { color: themeColors.textSecondary }]}>{partner.desc}</Text>
             </View>
-            <View style={[styles.partnerArrow, { backgroundColor: `${colors.border}30` }]}>
-              <Ionicons name="arrow-forward" size={14} color={colors.textSecondary} />
+            <View style={[styles.partnerArrow, { backgroundColor: `${themeColors.borderCard}30` }]}>
+              <Ionicons name="arrow-forward" size={14} color={themeColors.textSecondary} />
             </View>
           </TouchableOpacity>
         ))}
 
         {/* Tip */}
-        <View style={[styles.tipBox, { backgroundColor: `${colors.primary}08` }]}>
-          <Ionicons name="bulb-outline" size={18} color={colors.primary} />
-          <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+        <View style={[styles.tipBox, { backgroundColor: `${themeColors.purple}08` }]}>
+          <Ionicons name="bulb-outline" size={18} color={themeColors.purple} />
+          <Text style={[styles.tipText, { color: themeColors.textSecondary }]}>
             Chuẩn bị sẵn danh sách mua sắm trong app trước khi đặt hàng để tiết kiệm thời gian nhé!
           </Text>
         </View>

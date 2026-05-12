@@ -2,12 +2,17 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AlertManager from '../components/CustomAlert';
 import { useFocusEffect } from '@react-navigation/native';
+import { themeColors, gradients } from '../theme';
+import { glass } from '../theme/glass';
+import { glow } from '../theme/glow';
+import { borderRadius as designBorderRadius, borderPresets } from '../theme/borders';
+
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NutritionDiary'>;
 const { width } = Dimensions.get('window');
@@ -136,74 +141,74 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <Ionicons name="arrow-back" size={20} color={themeColors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
         <TouchableOpacity activeOpacity={0.7} onPress={() => {
           AlertManager.alert('Cài đặt mục tiêu', `Mục tiêu hiện tại: ${goal.calorieTarget} kcal/ngày.\nTính năng tùy chỉnh mục tiêu sẽ sớm ra mắt!`);
-        }} style={[styles.settingsBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="options-outline" size={20} color={colors.text} />
+        }} style={[styles.settingsBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <Ionicons name="options-outline" size={20} color={themeColors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Title */}
-        <Text style={[styles.screenTitle, { color: colors.text }]}>Nhật ký{'\n'}dinh dưỡng</Text>
-        <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>
+        <Text style={[styles.screenTitle, { color: themeColors.textPrimary }]}>Nhật ký{'\n'}dinh dưỡng</Text>
+        <Text style={[styles.dateLabel, { color: themeColors.textSecondary }]}>
           {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
         </Text>
 
         {/* Main stat cards - bento layout */}
         <View style={styles.mainStats}>
           {/* Calorie card - large */}
-          <View style={[styles.calorieCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.calorieCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
             <View style={styles.calorieHeader}>
               <View>
-                <Text style={[styles.calorieLabel, { color: colors.textSecondary }]}>Calories</Text>
+                <Text style={[styles.calorieLabel, { color: themeColors.textSecondary }]}>Calories</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 4 }}>
-                  <Text style={[styles.calorieValue, { color: caloriePercent > 90 ? '#FF3B30' : colors.text }]}>
+                  <Text style={[styles.calorieValue, { color: caloriePercent > 90 ? '#FF3B30' : themeColors.textPrimary }]}>
                     {goal.currentCalories}
                   </Text>
-                  <Text style={[styles.calorieTarget, { color: colors.textSecondary }]}>
+                  <Text style={[styles.calorieTarget, { color: themeColors.textSecondary }]}>
                     /{goal.calorieTarget}
                   </Text>
                 </View>
               </View>
               <View style={styles.calorieRingWrapper}>
-                <ProgressArc percent={caloriePercent} size={64} color={caloriePercent > 90 ? '#FF3B30' : colors.primary} strokeWidth={6} />
+                <ProgressArc percent={caloriePercent} size={64} color={caloriePercent > 90 ? '#FF3B30' : themeColors.purple} strokeWidth={6} />
                 <View style={styles.calorieRingCenter}>
-                  <Text style={[styles.caloriePercent, { color: caloriePercent > 90 ? '#FF3B30' : colors.primary }]}>
+                  <Text style={[styles.caloriePercent, { color: caloriePercent > 90 ? '#FF3B30' : themeColors.purple }]}>
                     {Math.round(caloriePercent)}%
                   </Text>
                 </View>
               </View>
             </View>
             {/* Progress bar */}
-            <View style={[styles.progressBg, { backgroundColor: `${colors.primary}12` }]}>
+            <View style={[styles.progressBg, { backgroundColor: `${themeColors.purple}12` }]}>
               <View style={[styles.progressFill, { 
                 width: `${caloriePercent}%`, 
-                backgroundColor: caloriePercent > 90 ? '#FF3B30' : colors.primary 
+                backgroundColor: caloriePercent > 90 ? '#FF3B30' : themeColors.purple 
               }]} />
             </View>
-            <Text style={[styles.remainingText, { color: colors.textSecondary }]}>
+            <Text style={[styles.remainingText, { color: themeColors.textSecondary }]}>
               Còn lại {remaining} kcal
             </Text>
           </View>
 
           {/* Water card */}
-          <TouchableOpacity activeOpacity={0.7} onPress={addWater} style={[styles.waterCard, { backgroundColor: colors.card }]}>
+          <TouchableOpacity activeOpacity={0.7} onPress={addWater} style={[styles.waterCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
             <Ionicons name="water" size={22} color="#007AFF" />
-            <Text style={[styles.waterValue, { color: colors.text }]}>
-              {goal.currentWater}<Text style={{ color: colors.textSecondary, fontSize: 14 }}>/{goal.waterTarget}</Text>
+            <Text style={[styles.waterValue, { color: themeColors.textPrimary }]}>
+              {goal.currentWater}<Text style={{ color: themeColors.textSecondary, fontSize: 14 }}>/{goal.waterTarget}</Text>
             </Text>
             <View style={[styles.waterBarBg, { backgroundColor: '#007AFF15' }]}>
               <View style={[styles.waterBarFill, { height: `${waterPercent}%`, backgroundColor: '#007AFF' }]} />
             </View>
-            <Text style={[styles.waterLabel, { color: colors.textSecondary }]}>ly nước</Text>
+            <Text style={[styles.waterLabel, { color: themeColors.textSecondary }]}>ly nước</Text>
             <Text style={[styles.waterTap, { color: '#007AFF' }]}>+1</Text>
           </TouchableOpacity>
         </View>
@@ -215,10 +220,10 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
             { label: 'Protein', value: '30%', color: '#34C759', icon: 'barbell-outline' },
             { label: 'Fat', value: '25%', color: '#5856D6', icon: 'water-outline' },
           ].map((macro, i) => (
-            <View key={i} style={[styles.macroItem, { backgroundColor: colors.card }]}>
+            <View key={i} style={[styles.macroItem, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
               <Ionicons name={macro.icon as any} size={16} color={macro.color} />
-              <Text style={[styles.macroValue, { color: colors.text }]}>{macro.value}</Text>
-              <Text style={[styles.macroLabel, { color: colors.textSecondary }]}>{macro.label}</Text>
+              <Text style={[styles.macroValue, { color: themeColors.textPrimary }]}>{macro.value}</Text>
+              <Text style={[styles.macroLabel, { color: themeColors.textSecondary }]}>{macro.label}</Text>
             </View>
           ))}
         </View>
@@ -226,10 +231,10 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
         {/* Today's Meals */}
         <View style={styles.mealsSection}>
           <View style={styles.mealsSectionHeader}>
-            <Text style={[styles.mealsTitle, { color: colors.text }]}>Bữa ăn hôm nay</Text>
+            <Text style={[styles.mealsTitle, { color: themeColors.textPrimary }]}>Bữa ăn hôm nay</Text>
             <TouchableOpacity
               activeOpacity={0.7}
-              style={[styles.addMealBtn, { backgroundColor: colors.primary }]}
+              style={[styles.addMealBtn, { backgroundColor: themeColors.purple }]}
               onPress={() => setShowAddEntry(!showAddEntry)}
             >
               <Ionicons name={showAddEntry ? 'close' : 'add'} size={18} color="#FFF" />
@@ -238,26 +243,26 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
 
           {/* Add Entry Form */}
           {showAddEntry && (
-            <View style={[styles.addForm, { backgroundColor: colors.card }]}>
+            <View style={[styles.addForm, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: `${colors.border}60` }]}
+                style={[styles.input, { backgroundColor: themeColors.bgPrimary, color: themeColors.textPrimary, borderColor: `${themeColors.borderCard}60` }]}
                 placeholder="Tên bữa ăn (VD: Phở bò)"
-                placeholderTextColor={`${colors.textSecondary}80`}
+                placeholderTextColor={`${themeColors.textSecondary}80`}
                 value={mealName}
                 onChangeText={setMealName}
               />
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TextInput
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: `${colors.border}60`, flex: 1 }]}
+                  style={[styles.input, { backgroundColor: themeColors.bgPrimary, color: themeColors.textPrimary, borderColor: `${themeColors.borderCard}60`, flex: 1 }]}
                   placeholder="Calories (kcal)"
-                  placeholderTextColor={`${colors.textSecondary}80`}
+                  placeholderTextColor={`${themeColors.textSecondary}80`}
                   keyboardType="numeric"
                   value={mealCalories}
                   onChangeText={setMealCalories}
                 />
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  style={[styles.saveEntryBtn, { backgroundColor: colors.primary }]}
+                  style={[styles.saveEntryBtn, { ...glow.button, backgroundColor: themeColors.purple }]}
                   onPress={addEntry}
                 >
                   <Text style={styles.saveEntryText}>Thêm</Text>
@@ -268,32 +273,32 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
 
           {/* Entries */}
           {goal.entries.length === 0 ? (
-            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-              <Ionicons name="restaurant-outline" size={36} color={`${colors.textSecondary}40`} />
-              <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>Chưa có bữa ăn nào</Text>
-              <Text style={[styles.emptyDesc, { color: `${colors.textSecondary}80` }]}>
+            <View style={[styles.emptyState, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+              <Ionicons name="restaurant-outline" size={36} color={`${themeColors.textSecondary}40`} />
+              <Text style={[styles.emptyTitle, { color: themeColors.textSecondary }]}>Chưa có bữa ăn nào</Text>
+              <Text style={[styles.emptyDesc, { color: `${themeColors.textSecondary}80` }]}>
                 Bấm "+" để ghi nhận bữa ăn đầu tiên
               </Text>
             </View>
           ) : (
             goal.entries.map((entry, index) => (
-              <View key={entry.id} style={[styles.entryCard, { backgroundColor: colors.card }]}>
-                <View style={[styles.entryDot, { backgroundColor: colors.primary }]} />
+              <View key={entry.id} style={[styles.entryCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+                <View style={[styles.entryDot, { backgroundColor: themeColors.purple }]} />
                 <View style={{ flex: 1, marginLeft: 14 }}>
-                  <Text style={[styles.entryName, { color: colors.text }]}>{entry.meal}</Text>
-                  <Text style={[styles.entryTime, { color: colors.textSecondary }]}>{entry.time}</Text>
+                  <Text style={[styles.entryName, { color: themeColors.textPrimary }]}>{entry.meal}</Text>
+                  <Text style={[styles.entryTime, { color: themeColors.textSecondary }]}>{entry.time}</Text>
                 </View>
-                <Text style={[styles.entryCal, { color: colors.primary }]}>+{entry.calories}</Text>
-                <Text style={[styles.entryUnit, { color: colors.textSecondary }]}>kcal</Text>
+                <Text style={[styles.entryCal, { color: themeColors.purple }]}>+{entry.calories}</Text>
+                <Text style={[styles.entryUnit, { color: themeColors.textSecondary }]}>kcal</Text>
               </View>
             ))
           )}
         </View>
 
         {/* Tip */}
-        <View style={[styles.tipBox, { backgroundColor: `${colors.primary}08` }]}>
-          <Ionicons name="bulb-outline" size={18} color={colors.primary} />
-          <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+        <View style={[styles.tipBox, { backgroundColor: `${themeColors.purple}08` }]}>
+          <Ionicons name="bulb-outline" size={18} color={themeColors.purple} />
+          <Text style={[styles.tipText, { color: themeColors.textSecondary }]}>
             Uống 1 ly nước trước bữa ăn 30 phút giúp giảm cảm giác thèm ăn và hỗ trợ tiêu hóa tốt hơn.
           </Text>
         </View>
@@ -320,24 +325,19 @@ const styles = StyleSheet.create({
   // Main stats
   mainStats: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   calorieCard: { 
-    flex: 2, padding: 20, borderRadius: 22,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
+    flex: 2, padding: 20, 
+    ...borderPresets.card,
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    shadowColor: '#a855f7', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 15, elevation: 4,
   },
   calorieHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  calorieLabel: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  calorieValue: { fontSize: 36, fontWeight: '900', lineHeight: 40, letterSpacing: -1 },
-  calorieTarget: { fontSize: 14, fontWeight: '500', marginLeft: 2 },
-  calorieRingWrapper: { width: 64, height: 64, justifyContent: 'center', alignItems: 'center' },
-  calorieRingCenter: { position: 'absolute', justifyContent: 'center', alignItems: 'center' },
-  caloriePercent: { fontSize: 14, fontWeight: '800' },
-  progressBg: { height: 6, borderRadius: 3, marginTop: 16 },
-  progressFill: { height: '100%', borderRadius: 3 },
-  remainingText: { fontSize: 12, marginTop: 8 },
 
   // Water
   waterCard: { 
-    flex: 1, padding: 16, borderRadius: 22, alignItems: 'center', justifyContent: 'space-between',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
+    flex: 1, padding: 16, alignItems: 'center', justifyContent: 'space-between',
+    ...borderPresets.card,
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    shadowColor: '#a855f7', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 15, elevation: 4,
   },
   waterValue: { fontSize: 24, fontWeight: '900', marginTop: 6, letterSpacing: -0.5 },
   waterBarBg: { width: 32, height: 50, borderRadius: 16, overflow: 'hidden', justifyContent: 'flex-end', marginVertical: 4 },
@@ -348,7 +348,9 @@ const styles = StyleSheet.create({
   // Macros
   macroStrip: { flexDirection: 'row', gap: 10, marginBottom: 28 },
   macroItem: { 
-    flex: 1, padding: 14, borderRadius: 16, alignItems: 'center',
+    flex: 1, padding: 14, alignItems: 'center',
+    ...borderPresets.card,
+    borderRadius: designBorderRadius.lg,
   },
   macroValue: { fontSize: 18, fontWeight: '800', marginTop: 6, letterSpacing: -0.3 },
   macroLabel: { fontSize: 11, fontWeight: '500', marginTop: 2 },
@@ -368,7 +370,9 @@ const styles = StyleSheet.create({
 
   // Entry card
   entryCard: { 
-    flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', padding: 16, marginBottom: 8,
+    ...borderPresets.card,
+    borderRadius: designBorderRadius.lg,
   },
   entryDot: { width: 8, height: 8, borderRadius: 4 },
   entryName: { fontSize: 15, fontWeight: '600' },

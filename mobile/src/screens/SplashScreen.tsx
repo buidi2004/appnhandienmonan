@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera } from 'expo-camera';
 import { auth, onAuthStateChanged } from '../config/firebaseConfig';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
@@ -93,28 +94,29 @@ export default function SplashScreen({ navigation }: Props) {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       <Animated.View 
         style={[
           styles.logoContainer, 
           { 
-            backgroundColor: colors.card, 
-            shadowColor: colors.primary, 
+            ...glass.card,
+            backgroundColor: themeColors.bgCard, 
+            shadowColor: themeColors.purple, 
             marginBottom: spacing.xl,
             opacity: opacity,
             transform: [{ scale: scale }]
           }
         ]}
       >
-        <Ionicons name="restaurant" size={80} color={colors.primary} />
+        <Ionicons name="restaurant" size={80} color={themeColors.purple} />
       </Animated.View>
       
       <Animated.View style={[styles.textContainer, { opacity: textOpacity }]}>
-        <Text style={[styles.title, typography.h1, { color: colors.primary }]}>Smart Cooking AI</Text>
-        <Text style={[styles.slogan, typography.h3, { color: colors.textSecondary }]}>Nấu gì hôm nay? Để AI lo!</Text>
+        <Text style={[styles.title, typography.h1, { color: themeColors.purple }]}>Smart Cooking AI</Text>
+        <Text style={[styles.slogan, typography.h3, { color: themeColors.textSecondary }]}>Nấu gì hôm nay? Để AI lo!</Text>
         
         <View style={[styles.spinnerContainer, { marginTop: spacing.xl }]}>
-          <ActivityIndicator size="small" color={colors.primary} />
+          <ActivityIndicator size="small" color={themeColors.purple} />
         </View>
       </Animated.View>
     </View>

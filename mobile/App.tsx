@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { LogBox, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BlurView } from 'expo-blur';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -40,10 +41,12 @@ import CookingCompleteScreen from './src/screens/CookingCompleteScreen';
 import IngredientInputScreen from './src/screens/IngredientInputScreen';
 import IngredientReviewScreen from './src/screens/IngredientReviewScreen';
 import PrepChecklistScreen from './src/screens/PrepChecklistScreen';
+import { themeColors, gradients, glass, glow } from './src/theme/index';
 
 import { ThemeProvider, useAppTheme } from './src/theme/theme';
 import { requestNotificationPermissions, scheduleDailyNotifications } from './src/services/notificationService';
 import { CustomAlert } from './src/components/CustomAlert';
+import { RootStackParamList, TabParamList } from './src/navigation/types';
 
 const styles = StyleSheet.create({
   fabShadow: {
@@ -57,43 +60,7 @@ const styles = StyleSheet.create({
 
 LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
 
-export type RootStackParamList = {
-  Splash: undefined;
-  Auth: undefined;
-  Register: undefined;
-  ForgotPassword: undefined;
-  Permission: undefined;
-  MainTabs: undefined;
-  AIResult: { imageUri?: string; initialIngredients?: string[]; initialRecipe?: any };
-  EditProfile: undefined;
-  Settings: undefined;
-  Notifications: undefined;
-  Support: undefined;
-  Terms: undefined;
-  Onboarding: undefined;
-  ShoppingList: undefined;
-  Inventory: undefined;
-  MealPlanner: undefined;
-  Community: undefined;
-  CookingMode: { steps: string[]; dishName: string; ingredients?: string[]; tips?: string };
-  HealthProfile: undefined;
-  CookingHistory: undefined;
-  ProUpgrade: undefined;
-  NutritionDiary: undefined;
-  OnlineShopping: undefined;
-  CookingComplete: { dishName: string; totalSteps: number; cookingTime: number; photosCount: number };
-  IngredientInput: undefined;
-  IngredientReview: { imageUri?: string; detectedIngredients: string[] };
-  PrepChecklist: { steps: string[]; dishName: string; ingredients?: string[]; tips?: string };
-};
 
-export type TabParamList = {
-  Home: undefined;
-  Favorites: undefined;
-  Camera: undefined;
-  Community: undefined;
-  Profile: undefined;
-};
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -133,18 +100,44 @@ function TabNavigator() {
             iconName = focused ? 'person' : 'person-outline';
           }
 
-          return <Ionicons name={iconName} size={26} color={color} />;
+          return (
+            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={focused ? {
+                shadowColor: '#c084fc',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 1,
+                shadowRadius: 12,
+                elevation: 10,
+              } : {}}>
+                <Ionicons name={iconName} size={26} color={color} />
+              </View>
+              {focused && (
+                <View style={{
+                  backgroundColor: '#a855f7',
+                  height: 2,
+                  borderRadius: 2,
+                  width: 20,
+                  marginTop: 4,
+                  shadowColor: '#a855f7',
+                  shadowOpacity: 0.8,
+                  shadowRadius: 6,
+                }} />
+              )}
+            </View>
+          );
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarActiveTintColor: '#c084fc',
+        tabBarInactiveTintColor: 'rgba(180, 150, 220, 0.45)',
         tabBarStyle: {
-          backgroundColor: colors.card,
+          backgroundColor: '#0A0019',
           borderTopWidth: 1,
-          borderTopColor: colors.border,
-          elevation: 5,
+          borderTopColor: 'rgba(255, 255, 255, 0.05)',
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+          elevation: 0,
           paddingBottom: 8,
           paddingTop: 8,
-          height: 65,
+          height: 70,
         },
         tabBarLabelStyle: {
           fontFamily: 'Poppins_400Regular',
@@ -191,12 +184,12 @@ function MainApp() {
     <SafeAreaProvider>
       <NavigationContainer>
         <StatusBar style={isDark ? "light" : "dark"} />
-        <Stack.Navigator 
+        <Stack.Navigator
           id="RootStack"
           initialRouteName="Splash"
-          screenOptions={{ 
+          screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
+            contentStyle: { backgroundColor: themeColors.bgPrimary },
             animation: 'fade',
           }}
         >
@@ -211,7 +204,7 @@ function MainApp() {
           <Stack.Screen name="AIResult" component={AIResultScreen} options={{ headerShown: false }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: true, title: 'Chỉnh sửa hồ sơ', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: true, title: 'Cài đặt chung', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
-          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Thông báo', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Support" component={SupportScreen} options={{ headerShown: true, title: 'Trung tâm hỗ trợ', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.text }} />
           <Stack.Screen name="ShoppingList" component={ShoppingListScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Inventory" component={InventoryScreen} options={{ headerShown: false }} />

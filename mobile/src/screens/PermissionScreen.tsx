@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Camera } from 'expo-camera';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Permission'>;
 
@@ -23,27 +24,27 @@ export default function PermissionScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, padding: spacing.xl }]}>
+    <View style={[styles.container, { backgroundColor: themeColors.bgPrimary, padding: spacing.xl }]}>
       <View style={[styles.iconContainer, { marginBottom: 40 }]}>
-        <View style={[styles.circleLayer1, { backgroundColor: `${colors.primary}10` }]}>
-          <View style={[styles.circleLayer2, { backgroundColor: `${colors.primary}20` }]}>
-            <Ionicons name="camera" size={60} color={colors.primary} />
+        <View style={[styles.circleLayer1, { backgroundColor: `${themeColors.purple}10` }]}>
+          <View style={[styles.circleLayer2, { backgroundColor: `${themeColors.purple}20` }]}>
+            <Ionicons name="camera" size={60} color={themeColors.purple} />
           </View>
         </View>
       </View>
 
-      <Text style={[styles.title, typography.h1, { color: colors.text, marginBottom: spacing.md }]}>Truy cập Máy ảnh</Text>
-      <Text style={[styles.description, typography.body, { color: colors.textSecondary }]}>
+      <Text style={[styles.title, typography.h1, { color: themeColors.textPrimary, marginBottom: spacing.md }]}>Truy cập Máy ảnh</Text>
+      <Text style={[styles.description, typography.body, { color: themeColors.textSecondary }]}>
         Để AI có thể nhìn thấy nguyên liệu trong tủ lạnh của bạn, ứng dụng cần quyền truy cập Camera và Thư viện ảnh. 
         {"\n\n"}Dữ liệu hình ảnh chỉ dùng để nhận diện món ăn.
       </Text>
 
-      <TouchableOpacity style={[styles.allowButton, { backgroundColor: colors.primary, borderRadius: borderRadius.md, marginBottom: spacing.md, shadowColor: colors.primary }]} onPress={handleRequestPermission}>
-        <Text style={[styles.allowButtonText, typography.h3, { color: colors.background }]}>Cấp quyền ngay</Text>
+      <TouchableOpacity style={[styles.allowButton, { ...glow.button, backgroundColor: themeColors.purple, borderRadius: borderRadius.md, marginBottom: spacing.md, shadowColor: themeColors.purple }]} onPress={handleRequestPermission}>
+        <Text style={[styles.allowButtonText, typography.h3, { color: themeColors.textPrimary }]}>Cấp quyền ngay</Text>
       </TouchableOpacity>
       
       <TouchableOpacity style={styles.denyButton} onPress={() => navigation.replace('MainTabs')}>
-        <Text style={[styles.denyButtonText, typography.h3, { color: colors.textSecondary }]}>Để sau</Text>
+        <Text style={[styles.denyButtonText, typography.h3, { color: themeColors.textSecondary }]}>Để sau</Text>
       </TouchableOpacity>
     </View>
   );

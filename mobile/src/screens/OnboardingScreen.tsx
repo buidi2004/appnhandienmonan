@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { themeColors, gradients, glass, glow } from '../theme';
 import { SafeImage } from '../components/RealImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -55,21 +56,21 @@ export default function OnboardingScreen({ navigation }: Props) {
   const slide = slides[currentSlide];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       <TouchableOpacity style={styles.skipBtn} onPress={handleFinish}>
-        <Text style={[typography.body, { color: colors.textSecondary }]}>Bỏ qua</Text>
+        <Text style={[typography.body, { color: themeColors.textSecondary }]}>Bỏ qua</Text>
       </TouchableOpacity>
 
       <View style={styles.imageContainer}>
         <SafeImage uri={slide.image} style={[styles.image, { borderRadius: borderRadius.xl }]} />
-        <View style={[styles.iconWrapper, { backgroundColor: colors.card, shadowColor: colors.primary }]}>
-          <Ionicons name={slide.icon as any} size={40} color={colors.primary} />
+        <View style={[styles.iconWrapper, { ...glass.card, backgroundColor: themeColors.bgCard, shadowColor: themeColors.purple }]}>
+          <Ionicons name={slide.icon as any} size={40} color={themeColors.purple} />
         </View>
       </View>
 
       <View style={[styles.contentContainer, { paddingHorizontal: spacing.xl }]}>
-        <Text style={[typography.h1, { color: colors.text, textAlign: 'center', marginBottom: spacing.md }]}>{slide.title}</Text>
-        <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', lineHeight: 24 }]}>{slide.description}</Text>
+        <Text style={[typography.h1, { color: themeColors.textPrimary, textAlign: 'center', marginBottom: spacing.md }]}>{slide.title}</Text>
+        <Text style={[typography.body, { color: themeColors.textSecondary, textAlign: 'center', lineHeight: 24 }]}>{slide.description}</Text>
       </View>
 
       <View style={[styles.footer, { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxl }]}>
@@ -80,7 +81,7 @@ export default function OnboardingScreen({ navigation }: Props) {
               style={[
                 styles.dot, 
                 { 
-                  backgroundColor: currentSlide === index ? colors.primary : colors.border,
+                  backgroundColor: currentSlide === index ? themeColors.purple : themeColors.borderCard,
                   width: currentSlide === index ? 24 : 8
                 }
               ]} 
@@ -89,11 +90,11 @@ export default function OnboardingScreen({ navigation }: Props) {
         </View>
 
         <TouchableOpacity 
-          style={[styles.nextBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.lg }]}
+          style={[styles.nextBtn, { ...glow.button, backgroundColor: themeColors.purple, borderRadius: borderRadius.lg }]}
           onPress={handleNext}
         >
-          <Text style={[typography.h3, { color: '#FFF' }]}>{currentSlide === slides.length - 1 ? 'Bắt đầu ngay' : 'Tiếp theo'}</Text>
-          <Ionicons name="arrow-forward" size={20} color="#FFF" style={{ marginLeft: 8 }} />
+          <Text style={[typography.h3, { color: themeColors.textPrimary }]}>{currentSlide === slides.length - 1 ? 'Bắt đầu ngay' : 'Tiếp theo'}</Text>
+          <Ionicons name="arrow-forward" size={20} color={themeColors.textPrimary} style={{ marginLeft: 8 }} />
         </TouchableOpacity>
       </View>
     </View>
@@ -101,65 +102,23 @@ export default function OnboardingScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   skipBtn: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    zIndex: 10,
-    padding: 10,
+    position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10,
   },
   imageContainer: {
-    height: '50%',
-    width: '100%',
-    padding: 20,
-    paddingTop: 80,
-    alignItems: 'center',
-    position: 'relative',
+    height: '50%', width: '100%', padding: 20, paddingTop: 80, alignItems: 'center', position: 'relative',
   },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
+  image: { width: '100%', height: '100%', resizeMode: 'cover' },
   iconWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 10,
+    position: 'absolute', bottom: 0, width: 80, height: 80, borderRadius: 40,
+    justifyContent: 'center', alignItems: 'center',
   },
-  contentContainer: {
-    flex: 1,
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  pagination: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
+  contentContainer: { flex: 1, alignItems: 'center', marginTop: 40 },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pagination: { flexDirection: 'row', alignItems: 'center' },
+  dot: { height: 8, borderRadius: 4, marginRight: 8 },
   nextBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 14,
   }
 });

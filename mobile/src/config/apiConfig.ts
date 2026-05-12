@@ -15,6 +15,7 @@ const API_CONFIG = {
     IDENTIFY_DISH: '/api/identify-dish',
     SEARCH_IMAGE: '/api/search-image',
     FAVORITES: '/api/favorites',
+    COMMUNITY_POSTS: '/api/community/posts',
   }
 };
 

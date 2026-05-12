@@ -20,9 +20,10 @@ import { useAppTheme } from '../theme/theme';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import AnimatedButton from '../components/AnimatedButton';
-import GlassCard from '../components/GlassCard';
+import { GlassCard } from '../components/ui/GlassCard';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { TabParamList, RootStackParamList } from '../../App';
+import { TabParamList, RootStackParamList } from '../navigation/types';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 type Props = BottomTabScreenProps<TabParamList, 'Camera'>;
 
@@ -61,16 +62,16 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
   }, []);
 
   if (!permission) {
-    return <View style={[styles.container, { backgroundColor: colors.background }]} />;
+    return <View style={[styles.container, { backgroundColor: themeColors.bgPrimary }]} />;
   }
 
   if (!permission.granted) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background, padding: spacing.xl }]}>
-        <Ionicons name="camera-outline" size={64} color={colors.textSecondary} />
-        <Text style={[styles.permissionText, typography.body, { color: colors.textSecondary, marginVertical: spacing.lg }]}>Chúng tôi cần quyền truy cập Camera để quét nguyên liệu</Text>
-        <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary, paddingHorizontal: spacing.xl, borderRadius: borderRadius.md }]} onPress={requestPermission}>
-          <Text style={[styles.buttonText, typography.body, { color: colors.background }]}>Cấp quyền</Text>
+      <View style={[styles.centerContainer, { backgroundColor: themeColors.bgPrimary, padding: spacing.xl }]}>
+        <Ionicons name="camera-outline" size={64} color={themeColors.textSecondary} />
+        <Text style={[styles.permissionText, typography.body, { color: themeColors.textSecondary, marginVertical: spacing.lg }]}>Chúng tôi cần quyền truy cập Camera để quét nguyên liệu</Text>
+        <TouchableOpacity style={[styles.button, { ...glow.button, backgroundColor: themeColors.purple, paddingHorizontal: spacing.xl, borderRadius: borderRadius.md }]} onPress={requestPermission}>
+          <Text style={[styles.buttonText, typography.body, { color: themeColors.textPrimary }]}>Cấp quyền</Text>
         </TouchableOpacity>
       </View>
     );
@@ -145,7 +146,7 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
               <Ionicons 
                 name={flash === 'on' ? "flash" : "flash-off"} 
                 size={24} 
-                color={flash === 'on' ? colors.primary : "#FFF"} 
+                color={flash === 'on' ? themeColors.purple : "#FFF"} 
               />
             </AnimatedButton>
           </View>
@@ -153,16 +154,16 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
           {/* Tối ưu 3: Khung nhận diện AI Style */}
           <View style={styles.scannerWrapper}>
             {/* 4 Góc vuông */}
-            <View style={[styles.corner, styles.topLeft, { borderColor: colors.primary }]} />
-            <View style={[styles.corner, styles.topRight, { borderColor: colors.primary }]} />
-            <View style={[styles.corner, styles.bottomLeft, { borderColor: colors.primary }]} />
-            <View style={[styles.corner, styles.bottomRight, { borderColor: colors.primary }]} />
+            <View style={[styles.corner, styles.topLeft, { borderColor: themeColors.purple }]} />
+            <View style={[styles.corner, styles.topRight, { borderColor: themeColors.purple }]} />
+            <View style={[styles.corner, styles.bottomLeft, { borderColor: themeColors.purple }]} />
+            <View style={[styles.corner, styles.bottomRight, { borderColor: themeColors.purple }]} />
             
             {/* Vạch sáng chạy */}
             <Animated.View style={[
               styles.scanLine, 
               { 
-                backgroundColor: colors.primary,
+                backgroundColor: themeColors.purple,
                 transform: [{ translateY }]
               }
             ]} />
@@ -184,9 +185,9 @@ export default function CameraScreen({ navigation: tabNavigation }: Props) {
               disabled={isProcessing}
             >
               {isProcessing ? (
-                <ActivityIndicator size="large" color={colors.primary} />
+                <ActivityIndicator size="large" color={themeColors.purple} />
               ) : (
-                <View style={[styles.captureInner, { backgroundColor: colors.primary }]} />
+                <View style={[styles.captureInner, { backgroundColor: themeColors.purple }]} />
               )}
             </AnimatedButton>
 

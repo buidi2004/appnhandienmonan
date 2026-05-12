@@ -1,0 +1,46 @@
+export type RootStackParamList = {
+  Splash: undefined;
+  Auth: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+  Permission: undefined;
+  MainTabs: undefined;
+  AIResult?: { imageUri?: string; initialIngredients?: string[]; initialRecipe?: any; scanMode?: string };
+  EditProfile: undefined;
+  Settings: undefined;
+  Notifications: undefined;
+  Support: undefined;
+  Terms: undefined;
+  Onboarding: undefined;
+  ShoppingList: undefined;
+  Inventory: undefined;
+  MealPlanner: undefined;
+  Community: undefined;
+  CookingMode: { steps: string[]; dishName: string; ingredients?: string[]; tips?: string; dishImage?: string };
+  HealthProfile: undefined;
+  CookingHistory: undefined;
+  ProUpgrade: undefined;
+  NutritionDiary?: { presetEntry?: { meal: string; calories?: number } };
+  OnlineShopping: undefined;
+  CookingComplete: { dishName: string; totalSteps: number; cookingTime: number; photosCount: number; dishImage?: string };
+  IngredientInput: undefined;
+  IngredientReview: { imageUri?: string; detectedIngredients: string[] };
+  PrepChecklist: { steps: string[]; dishName: string; ingredients?: string[]; tips?: string; calories?: string; dishImage?: string };
+  CommunityPostDetail: { postId: string };
+  CommunityEditPost: { postId: string; post: any };
+  DishResult: { imageUri: string };
+  MissingIngredients: undefined;
+  NutritionSummary: { dishName: string; calories?: string; cookingTime: number; totalSteps: number };
+  PrivacyPolicy: undefined;
+  RecipeCustomize: { dishName: string; ingredients: string[]; steps: string[]; tips?: string; calories?: string; substitutions?: any[] };
+  ScanHistory: undefined;
+  UserGuide: undefined;
+};
+
+export type TabParamList = {
+  Home: undefined;
+  Favorites: undefined;
+  Camera: undefined;
+  Community: undefined;
+  Profile: undefined;
+};

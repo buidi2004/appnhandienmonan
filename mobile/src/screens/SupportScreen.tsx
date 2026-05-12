@@ -14,6 +14,7 @@ import {
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AlertManager from '../components/CustomAlert';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -65,14 +66,14 @@ export default function SupportScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]} showsVerticalScrollIndicator={false}>
       
       {/* Header & Contact Buttons */}
       <View style={[styles.headerSection, { padding: spacing.lg }]}>
-        <View style={[styles.contactCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.xl }]}>
-          <Ionicons name="headset" size={40} color={colors.primary} style={{ marginBottom: spacing.md }} />
-          <Text style={[typography.h2, { color: colors.text, marginBottom: spacing.xs }]}>Bạn gặp vấn đề?</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.xl }]}>
+        <View style={[styles.contactCard, { ...glass.card, backgroundColor: themeColors.bgCard, borderRadius: borderRadius.lg, padding: spacing.xl }]}>
+          <Ionicons name="headset" size={40} color={themeColors.purple} style={{ marginBottom: spacing.md }} />
+          <Text style={[typography.h2, { color: themeColors.textPrimary, marginBottom: spacing.xs }]}>Bạn gặp vấn đề?</Text>
+          <Text style={[typography.body, { color: themeColors.textSecondary, textAlign: 'center', marginBottom: spacing.xl }]}>
             Chúng tôi luôn sẵn sàng hỗ trợ bạn qua các kênh trực tiếp dưới đây.
           </Text>
           
@@ -80,7 +81,7 @@ export default function SupportScreen() {
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={handleCall}
-              style={[styles.actionBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}
+              style={[styles.actionBtn, { ...glow.button, backgroundColor: themeColors.purple, borderRadius: borderRadius.md }]}
             >
               <Ionicons name="call" size={20} color="#FFF" />
               <Text style={styles.actionBtnText}>Gọi Hotline</Text>
@@ -100,15 +101,15 @@ export default function SupportScreen() {
 
       {/* FAQ Section */}
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <Text style={[typography.h2, { color: colors.text, marginBottom: spacing.md }]}>Câu hỏi thường gặp</Text>
+        <Text style={[typography.h2, { color: themeColors.textPrimary, marginBottom: spacing.md }]}>Câu hỏi thường gặp</Text>
         
         {/* Search Bar */}
-        <View style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderColor: colors.border }]}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
+        <View style={[styles.searchBar, { ...glass.card, backgroundColor: themeColors.bgCard, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderColor: themeColors.borderCard }]}>
+          <Ionicons name="search" size={20} color={themeColors.textSecondary} />
           <TextInput 
             placeholder="Tìm kiếm vấn đề của bạn..."
-            placeholderTextColor={colors.textSecondary}
-            style={[styles.searchInput, { color: colors.text }]}
+            placeholderTextColor={themeColors.textSecondary}
+            style={[styles.searchInput, { color: themeColors.textPrimary }]}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -123,22 +124,22 @@ export default function SupportScreen() {
               onPress={() => toggleFaq(idx)}
               style={[
                 styles.faqItem, 
-                { backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.sm, borderColor: colors.border },
-                isExpanded && [styles.faqExpanded, { borderColor: colors.border }]
+                { ...glass.card, backgroundColor: themeColors.bgCard, borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.sm, borderColor: themeColors.borderCard },
+                isExpanded && [styles.faqExpanded, { borderColor: themeColors.purple }]
               ]}
             >
               <View style={styles.faqHeader}>
-                <Text style={[styles.faqQuestion, { color: colors.text }]}>{faq.q}</Text>
+                <Text style={[styles.faqQuestion, { color: themeColors.textPrimary }]}>{faq.q}</Text>
                 <Ionicons 
                   name={isExpanded ? "chevron-up" : "chevron-down"} 
                   size={20} 
-                  color={colors.textSecondary} 
+                  color={themeColors.textSecondary} 
                 />
               </View>
               {isExpanded && (
                 <View style={styles.faqContent}>
-                  <View style={[styles.divider, { backgroundColor: colors.border, marginVertical: 12 }]} />
-                  <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
+                  <View style={[styles.divider, { backgroundColor: themeColors.borderCard, marginVertical: 12 }]} />
+                  <Text style={[typography.body, { color: themeColors.textSecondary, lineHeight: 22 }]}>
                     {faq.a}
                   </Text>
                 </View>
@@ -149,7 +150,7 @@ export default function SupportScreen() {
 
         {filteredFaqs.length === 0 && (
           <View style={{ padding: 40, alignItems: 'center' }}>
-            <Text style={{ color: colors.textSecondary }}>Không tìm thấy câu hỏi phù hợp.</Text>
+            <Text style={{ color: themeColors.textSecondary }}>Không tìm thấy câu hỏi phù hợp.</Text>
           </View>
         )}
       </View>

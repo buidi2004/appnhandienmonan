@@ -2,11 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AlertManager from '../components/CustomAlert';
+import { themeColors, gradients, glass, glow, borderRadius as themeBorderRadius } from '../theme';
+import { RealImage } from '../components/RealImage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PrepChecklist'>;
 const { width } = Dimensions.get('window');
@@ -36,7 +38,7 @@ const COMMON_PREP = [
 
 export default function PrepChecklistScreen({ route, navigation }: Props) {
   const { colors, typography } = useAppTheme();
-  const { steps, dishName, ingredients = [], tips } = route.params;
+  const { steps, dishName, ingredients = [], tips, dishImage } = route.params;
 
   // Generate checklist from ingredients + common prep
   const [checklist, setChecklist] = useState<ChecklistItem[]>(() => {
@@ -99,11 +101,11 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
         'Có vẻ bạn chưa chuẩn bị xong các bước sơ chế quan trọng. Bạn vẫn muốn bắt đầu nấu chứ?',
         [
           { text: 'Kiểm tra lại', style: 'cancel' },
-          { text: 'Bắt đầu luôn', onPress: () => navigation.replace('CookingMode', { steps, dishName, ingredients, tips }) }
+          { text: 'Bắt đầu luôn', onPress: () => navigation.replace('CookingMode', { steps, dishName, ingredients, tips, dishImage }) }
         ]
       );
     } else {
-      navigation.replace('CookingMode', { steps, dishName, ingredients, tips });
+      navigation.replace('CookingMode', { steps, dishName, ingredients, tips, dishImage });
     }
   };
 
@@ -113,31 +115,50 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
       'Bạn nên kiểm tra dụng cụ và sơ chế trước để việc nấu nướng suôn sẻ hơn.',
       [
         { text: 'Quay lại', style: 'cancel' },
-        { text: 'Bỏ qua', style: 'destructive', onPress: () => navigation.replace('CookingMode', { steps, dishName, ingredients, tips }) }
+        { text: 'Bỏ qua', style: 'destructive', onPress: () => navigation.replace('CookingMode', { steps, dishName, ingredients, tips, dishImage }) }
       ]
     );
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }} />
-        <TouchableOpacity activeOpacity={0.7} onPress={handleSkip}>
-          <Text style={[styles.skipText, { color: colors.textSecondary }]}>Bỏ qua</Text>
-        </TouchableOpacity>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} bounces={false}>
+        {/* Header Image */}
+        <View style={styles.heroSection}>
+          <RealImage 
+            query={dishName}
+            initialUri={dishImage}
+            style={styles.heroImage}
+          />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.5)', 'transparent', 'rgba(26,11,59,1)']}
+            style={styles.heroGradient}
+          />
+          
+          {/* Header Controls */}
+          <View style={styles.headerFloating}>
+            <TouchableOpacity 
+              activeOpacity={0.7} 
+              onPress={() => navigation.goBack()} 
+              style={[styles.backBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]}
+            >
+              <Ionicons name="arrow-back" size={20} color="#FFF" />
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleSkip}>
+              <Text style={styles.skipTextFloating}>Bỏ qua</Text>
+            </TouchableOpacity>
+          </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Title */}
-        <Text style={[styles.screenTitle, { color: colors.text }]}>Chuẩn bị{'\n'}trước khi nấu</Text>
-        <Text style={[styles.dishLabel, { color: colors.primary }]}>{dishName}</Text>
+          <View style={styles.heroTextContent}>
+            <Text style={[styles.screenTitle, { color: '#FFF' }]}>Chuẩn bị{'\n'}trước khi nấu</Text>
+            <Text style={[styles.dishLabel, { color: '#A89FFF' }]}>{dishName}</Text>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 20 }}>
 
         {/* Progress */}
-        <View style={[styles.progressCard, { backgroundColor: colors.card }]}>
+        <View style={[styles.progressCard, { ...glass.card, backgroundColor: colors.card }]}>
           <View style={styles.progressHeader}>
             <Text style={[styles.progressText, { color: colors.text }]}>
               {checkedCount}/{totalCount} hoàn thành
@@ -170,14 +191,14 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={0.7}
-                  style={[styles.checkItem, { backgroundColor: item.checked ? `${colors.success}06` : colors.card }]}
+                  style={[styles.checkItem, { ...glass.card, backgroundColor: item.checked ? `${themeColors.purple}06` : themeColors.bgCard }]}
                   onPress={() => toggleItem(item.id)}
                 >
                   <View style={[
                     styles.checkbox,
                     { 
-                      backgroundColor: item.checked ? colors.success : 'transparent',
-                      borderColor: item.checked ? colors.success : `${colors.border}80`,
+                      backgroundColor: item.checked ? '#43E97B' : 'transparent',
+                      borderColor: item.checked ? '#43E97B' : `${themeColors.borderCard}80`,
                     }
                   ]}>
                     {item.checked && <Ionicons name="checkmark" size={14} color="#FFF" />}
@@ -199,7 +220,7 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
 
         {/* Tips */}
         {tips ? (
-          <View style={[styles.tipsContainer, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}>
+          <View style={[styles.tipsContainer, { backgroundColor: `${themeColors.purple}10`, borderColor: `${themeColors.purple}30` }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
               <Ionicons name="bulb-outline" size={20} color={colors.primary} />
               <Text style={[styles.tipsTitle, { color: colors.primary }]}>Mẹo chuẩn bị</Text>
@@ -208,6 +229,7 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
           </View>
         ) : null}
 
+        </View>
         <View style={{ height: 120 }} />
       </ScrollView>
 
@@ -215,10 +237,10 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
       <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
         <TouchableOpacity activeOpacity={0.85} onPress={handleStart}>
           <LinearGradient
-            colors={isReady ? [colors.primary, `${colors.primary}CC`] : [`${colors.primary}80`, `${colors.primary}60`]}
+            colors={isReady ? [colors.primary, colors.primaryDark || colors.primary] : [`${colors.primary}80`, `${colors.primary}60`]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.startBtn, { shadowColor: isReady ? colors.primary : '#000' }]}
+            style={[styles.startBtn, isReady ? glow.button : {}]}
           >
             <View style={styles.startBtnIconWrapper}>
               <Ionicons name="restaurant" size={16} color={isReady ? colors.primary : '#888'} />
@@ -229,7 +251,7 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
           </LinearGradient>
         </TouchableOpacity>
         {!isReady && (
-          <Text style={[styles.hintText, { color: colors.textSecondary }]}>
+          <Text style={[styles.hintText, { color: themeColors.textSecondary }]}>
             Tick ít nhất 50% để sẵn sàng tốt hơn
           </Text>
         )}
@@ -240,12 +262,19 @@ export default function PrepChecklistScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
-  backBtn: { width: 40, height: 40, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  skipText: { fontSize: 15, fontWeight: '600' },
-  scrollContent: { paddingHorizontal: 20 },
-  screenTitle: { fontSize: 32, fontWeight: '800', lineHeight: 40, marginTop: 16, letterSpacing: -0.5 },
-  dishLabel: { fontSize: 16, fontWeight: '600', marginTop: 6, marginBottom: 24 },
+  headerFloating: { 
+    position: 'absolute', top: 50, left: 20, right: 20, 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 
+  },
+  heroSection: { height: 320, width: '100%', position: 'relative' },
+  heroImage: { width: '100%', height: '100%' },
+  heroGradient: { ...StyleSheet.absoluteFillObject },
+  heroTextContent: { position: 'absolute', bottom: 20, left: 20, right: 20 },
+  backBtn: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  skipTextFloating: { fontSize: 15, fontWeight: '700', color: '#FFF', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  scrollContent: { },
+  screenTitle: { fontSize: 32, fontWeight: '800', lineHeight: 38, letterSpacing: -0.5 },
+  dishLabel: { fontSize: 16, fontWeight: '700', marginTop: 8 },
 
   // Progress
   progressCard: { padding: 18, borderRadius: 18, marginBottom: 28 },

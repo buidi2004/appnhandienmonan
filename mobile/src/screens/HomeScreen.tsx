@@ -20,8 +20,15 @@ import { requestNotificationPermissions, scheduleDailyNotifications } from '../s
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList, TabParamList } from '../../App';
+import { RootStackParamList, TabParamList } from '../navigation/types';
 import { auth } from '../config/firebaseConfig';
+import { themeColors, gradients } from '../theme';
+import { glass } from '../theme/glass';
+import { glow } from '../theme/glow';
+import { shadow } from '../theme/shadow';
+import { typography as designTypography } from '../theme/typography';
+import { borderWidth, borderRadius, borderColors, borderPresets } from '../theme/borders';
+
 
 type HomeScreenProps = BottomTabScreenProps<TabParamList, 'Home'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -32,20 +39,20 @@ const DEFAULT_FOOD_IMAGE = 'https://images.unsplash.com/photo-1495195129352-aec3
 const popularRecipes = [
   { id: '1', name: 'Phở bò gia truyền', time: '60 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Món nước' },
   { id: '2', name: 'Bánh mì Sài Gòn', time: '15 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1600454021970-351feb4a5149?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
-  { id: '3', name: 'Cơm tấm Long Xuyên', time: '40 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1567034680077-d64e43f1f727?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Tất cả' },
-  { id: '4', name: 'Bún chả Hà Nội', time: '45 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1562967914-608f82629710?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
-  { id: '5', name: 'Gỏi cuốn tôm nhảy', time: '20 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1539136788836-3bc8513c1419?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Healthy' },
-  { id: '6', name: 'Lẩu Thái hải sản', time: '50 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1552611052-33e04de081de?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Món nước' },
-  { id: '7', name: 'Bún bò Huế', time: '55 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1624538356391-7667232230da?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
-  { id: '8', name: 'Bánh xèo miền Tây', time: '35 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
-  { id: '9', name: 'Cà phê muối Hội An', time: '10 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
-  { id: '10', name: 'Pizza Hải Sản', time: '40 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Ăn nhanh' },
-  { id: '11', name: 'Burger Bò Wagyu', time: '25 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
-  { id: '12', name: 'Ramen Nhật Bản', time: '45 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
-  { id: '13', name: 'Dimsum Tôm', time: '30 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
-  { id: '14', name: 'Sườn Nướng BBQ', time: '50 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Đồ nướng' },
-  { id: '15', name: 'Pad Thái Tôm', time: '30 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
-  { id: '16', name: 'Tôm Hùm Bơ Tỏi', time: '45 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1559740038-76508d5119be?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Đồ nướng' },
+  { id: '3', name: 'Cơm tấm Long Xuyên', time: '40 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Tất cả' },
+  { id: '4', name: 'Bún chả Hà Nội', time: '45 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
+  { id: '5', name: 'Gỏi cuốn tôm nhảy', time: '20 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Healthy' },
+  { id: '6', name: 'Lẩu Thái hải sản', time: '50 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Món nước' },
+  { id: '7', name: 'Bún bò Huế', time: '55 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1555126634-323283e090fa?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
+  { id: '8', name: 'Bánh xèo miền Tây', time: '35 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
+  { id: '9', name: 'Cà phê muối Hội An', time: '10 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
+  { id: '10', name: 'Pizza Hải Sản', time: '40 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Ăn nhanh' },
+  { id: '11', name: 'Burger Bò Wagyu', time: '25 phút', difficulty: 'Dễ', image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
+  { id: '12', name: 'Ramen Nhật Bản', time: '45 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Món nước' },
+  { id: '13', name: 'Dimsum Tôm', time: '30 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?q=80&w=600&auto=format&fit=crop', size: 'small', category: 'Ăn nhanh' },
+  { id: '14', name: 'Sườn Nướng BBQ', time: '50 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?q=80&w=600&auto=format&fit=crop', size: 'large', category: 'Đồ nướng' },
+  { id: '15', name: 'Pad Thái Tôm', time: '30 phút', difficulty: 'Vừa', image: 'https://images.unsplash.com/photo-1626804475297-41608ea09aeb?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Ăn nhanh' },
+  { id: '16', name: 'Tôm Hùm Bơ Tỏi', time: '45 phút', difficulty: 'Khó', image: 'https://images.unsplash.com/photo-1625944525533-473f1a3d54e7?q=80&w=600&auto=format&fit=crop', size: 'medium', category: 'Đồ nướng' },
 ];
 
 const trendingRecipes = [
@@ -110,7 +117,17 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
       <TouchableOpacity 
         key={item.id}
         activeOpacity={0.9}
-        style={[styles.bentoCard, { width: itemWidth, height: itemHeight, borderRadius: 24, backgroundColor: colors.card }]}
+        style={[styles.bentoCard, { 
+          width: itemWidth, 
+          height: itemHeight, 
+          backgroundColor: 'rgba(30, 10, 60, 0.8)', 
+          ...borderPresets.cardPurple,
+          shadowColor: '#c084fc',
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.5,
+          shadowRadius: 20,
+          elevation: 8
+        }]}
         onPress={() => navigation.navigate('AIResult', {
           initialRecipe: {
             title: item.name,
@@ -129,7 +146,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
           resizeMode="cover"
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.bentoGradient}
         >
           <Text style={[styles.bentoName, { color: '#FFF' }]} numberOfLines={2}>{item.name}</Text>
@@ -143,35 +160,51 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <ScrollView 
-        ref={scrollRef}
-        style={styles.container} 
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={{ flex: 1, backgroundColor: '#1A0B3B' }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView 
+          ref={scrollRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 140 }}
+          showsVerticalScrollIndicator={false}
+        >
         {/* Header Section */}
-        <View style={[styles.mainHeader, { paddingHorizontal: spacing.lg, paddingTop: spacing.md }]}>
-          <View>
-            <Text style={[typography.h2, { color: colors.text }]}>Khám phá</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Món ngon mỗi ngày cho gia đình</Text>
+        <View style={[styles.mainHeader, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, marginBottom: spacing.md }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.h2, { color: '#ffffff', lineHeight: 34 }]}>Khám phá</Text>
+            <Text style={[typography.caption, { color: '#a08acc', marginTop: 2 }]}>Món ngon mỗi ngày cho gia đình</Text>
           </View>
-          <TouchableOpacity 
-            style={[styles.headerIconButton, { backgroundColor: colors.card }]}
-            onPress={() => navigation.navigate('ShoppingList')}
-          >
-            <Ionicons name="cart-outline" size={24} color={colors.primary} />
-            {/* Có thể thêm badge ở đây nếu muốn */}
-          </TouchableOpacity>
+          <View style={{
+            backgroundColor: 'rgba(30, 10, 60, 0.8)',
+            borderWidth: borderWidth.thin,
+            borderColor: borderColors.purple.light,
+            borderRadius: borderRadius.md,
+            overflow: 'hidden'
+          }}>
+            <TouchableOpacity 
+              style={[styles.headerIconButton, { backgroundColor: 'transparent' }]}
+              onPress={() => navigation.navigate('ShoppingList')}
+            >
+              <Ionicons name="cart-outline" size={22} color="#c4a8ff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Search Bar - Editorial Style */}
-        <View style={[styles.searchSection, { paddingHorizontal: spacing.lg, marginTop: spacing.md }]}>
-          <View style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: 30 }]}>
-            <Ionicons name="search" size={20} color={colors.textSecondary} />
+        {/* Search Bar */}
+        <View style={styles.searchSection}>
+          <View style={[styles.searchBar, { 
+            backgroundColor: 'rgba(30, 10, 60, 0.8)',
+            marginHorizontal: spacing.lg,
+            marginTop: spacing.md,
+            borderRadius: borderRadius.xl,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+          }]}>
+            <Ionicons name="search" size={20} color="#a08acc" />
             <TextInput 
               placeholder="Tìm món ngon hôm nay..."
-              placeholderTextColor={colors.textSecondary}
-              style={[styles.searchInput, { color: colors.text }]}
+              placeholderTextColor="#a08acc"
+              style={[styles.searchInput, { color: '#ffffff' }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -189,15 +222,27 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
             imageStyle={{ borderRadius: 32 }}
           >
             <LinearGradient
-              colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.7)']}
+              colors={['rgba(10,0,30,0.92)', 'rgba(14,0,35,0.4)', 'transparent']}
               style={styles.heroGradient}
             >
               <View style={styles.heroContent}>
-                <Text style={styles.heroGreeting}>XIN CHÀO DĨ 👋</Text>
-                <Text style={styles.heroTitle}>{greeting}</Text>
-                <View style={[styles.heroBtn, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.heroBtnText}>Khám phá ngay</Text>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: borderRadius.md, alignSelf: 'flex-start', marginBottom: 12, borderWidth: borderWidth.normal, borderColor: borderColors.white.strong }}>
+                  <Text style={styles.heroGreeting}>XIN CHÀO DĨ 👋</Text>
                 </View>
+                <Text style={styles.heroTitle}>{greeting}</Text>
+                <TouchableOpacity 
+                  activeOpacity={0.85}
+                  onPress={handleExploreNow}
+                  style={[styles.heroBtn, { 
+                    backgroundColor: '#a855f7',
+                    shadowColor: '#a855f7',
+                    shadowOpacity: 0.8,
+                    shadowRadius: 16,
+                    elevation: 12
+                  }]}
+                >
+                  <Text style={styles.heroBtnText}>Khám phá ngay</Text>
+                </TouchableOpacity>
               </View>
             </LinearGradient>
           </ImageBackground>
@@ -205,44 +250,97 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
 
         {/* Smart Fridge Inventory Card */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.xl }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Tủ lạnh thông minh 🧊</Text>
+          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Tủ lạnh thông minh 🧊</Text>
         </View>
         <TouchableOpacity 
-          style={[styles.inventoryCard, { marginHorizontal: spacing.lg, backgroundColor: colors.card, borderRadius: 24 }]}
+          activeOpacity={0.7}
+          style={[styles.inventoryCard, { 
+            backgroundColor: 'rgba(30, 10, 60, 0.8)',
+            ...borderPresets.cardPurple,
+            marginHorizontal: spacing.lg,
+            shadowColor: '#c084fc',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.3,
+            shadowRadius: 20,
+          }]}
           onPress={() => navigation.navigate('Inventory')}
         >
-          <View style={styles.inventoryInfo}>
-            <Text style={[typography.h3, { color: colors.text }]}>Quản lý thực phẩm</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4 }]}>
-              Theo dõi hạn sử dụng để không bỏ phí thực phẩm nào nhé!
-            </Text>
-            <View style={[styles.inventoryBadge, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 12 }}>KIỂM TRA NGAY</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent' }}>
+            <View style={[styles.inventoryIconBox, { 
+              backgroundColor: 'rgba(30, 10, 60, 0.8)',
+              borderRadius: 16,
+              padding: 12,
+              borderWidth: borderWidth.normal,
+              borderColor: borderColors.purple.heavy,
+              shadowColor: '#a855f7',
+              shadowOpacity: 0.6,
+              shadowRadius: 10,
+              marginRight: 16
+            }]}>
+              <Ionicons name="snow" size={32} color="#c4a8ff" />
             </View>
-          </View>
-          <View style={[styles.inventoryIconBox, { backgroundColor: `${colors.primary}10` }]}>
-            <Ionicons name="snow" size={40} color={colors.primary} />
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={[typography.h3, { color: '#ffffff' }]} numberOfLines={1}>Quản lý thực phẩm</Text>
+              <Text style={[typography.body, { color: '#a08acc', marginTop: 4 }]} numberOfLines={2}>
+                Theo dõi hạn sử dụng để không bỏ phí thực phẩm nào nhé!
+              </Text>
+              <View style={{ 
+                alignSelf: 'flex-start',
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                borderColor: '#7F77DD',
+                borderRadius: 20,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                marginTop: 12 
+              }}>
+                <Text style={{ color: '#c4a8ff', fontWeight: '600', fontSize: 12 }}>KIỂM TRA NGAY</Text>
+              </View>
+            </View>
           </View>
         </TouchableOpacity>
 
         {/* Meal Planner Card */}
-        <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.xl }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Kế hoạch ăn uống 📅</Text>
+        <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.md }]}>
+          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Kế hoạch ăn uống 📅</Text>
         </View>
         <TouchableOpacity 
-          style={[styles.plannerCard, { marginHorizontal: spacing.lg, backgroundColor: colors.card, borderRadius: 24 }]}
+          activeOpacity={0.7}
+          style={[styles.plannerCard, { 
+            backgroundColor: 'rgba(30, 10, 60, 0.8)',
+            ...borderPresets.cardPurple,
+            marginHorizontal: spacing.lg,
+            shadowColor: '#c084fc',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.3,
+            shadowRadius: 20,
+          }]}
           onPress={() => navigation.navigate('MealPlanner')}
         >
-          <View style={[styles.plannerIconBox, { backgroundColor: '#5856D615' }]}>
-            <Ionicons name="calendar" size={32} color="#5856D6" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', flex: 1 }}>
+            <View style={{ 
+              backgroundColor: 'rgba(30, 10, 60, 0.8)',
+              borderRadius: 16,
+              padding: 12,
+              borderWidth: borderWidth.normal,
+              borderColor: borderColors.purple.heavy,
+              shadowColor: '#a855f7',
+              shadowOpacity: 0.6,
+              shadowRadius: 10,
+              marginRight: 16 
+            }}>
+              <Ionicons name="calendar" size={32} color="#c4a8ff" />
+            </View>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={[typography.h3, { color: '#ffffff' }]} numberOfLines={1}>Thực đơn tuần này</Text>
+              <Text style={[typography.body, { color: '#a08acc', marginTop: 4 }]} numberOfLines={2}>
+                Lên lịch bữa sáng, trưa, tối để ăn uống điều độ hơn.
+              </Text>
+            </View>
           </View>
-          <View style={styles.plannerInfo}>
-            <Text style={[typography.h3, { color: colors.text }]}>Thực đơn tuần này</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4 }]}>
-              Lên lịch bữa sáng, trưa, tối để ăn uống điều độ hơn.
-            </Text>
+          <View style={{ paddingLeft: 8 }}>
+            <Ionicons name="chevron-forward" size={20} color="#6a5a9a" />
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.border} />
         </TouchableOpacity>
 
         {/* Category Pills - Horizontal Scroll */}
@@ -259,16 +357,16 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
                   key={idx}
                   onPress={() => setActiveCategory(cat)}
                   style={[
-                    styles.categoryPill, 
+                    { ...glass.card, ...styles.categoryPill }, 
                     { 
-                      backgroundColor: isActive ? colors.primary : 'transparent',
-                      borderColor: isActive ? colors.primary : '#E0E0E0',
-                      borderWidth: 1,
+                      backgroundColor: isActive ? themeColors.purple : 'transparent',
+                      borderColor: isActive ? themeColors.purple : themeColors.borderCard,
+                      borderWidth: borderWidth.normal,
                       marginRight: 10
                     }
                   ]}
                 >
-                  <Text style={[styles.categoryText, { color: isActive ? '#FFF' : colors.text, fontWeight: isActive ? 'bold' : '500' }]}>
+                  <Text style={[styles.categoryText, { color: isActive ? themeColors.textPrimary : themeColors.textSecondary, fontWeight: isActive ? 'bold' : '500' }]}>
                     {cat}
                   </Text>
                 </TouchableOpacity>
@@ -279,9 +377,9 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
 
         {/* Chef's Specials - Horizontal Scroll */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.lg }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Gợi ý từ đầu bếp ✨</Text>
+          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Gợi ý từ đầu bếp 👨‍🍳</Text>
           <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Danh sách gợi ý đầy đủ đang được cập nhật!')}>
-            <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Tất cả</Text>
+            <Text style={{ color: '#c084fc', fontWeight: 'bold' }}>Tất cả</Text>
           </TouchableOpacity>
         </View>
         <ScrollView 
@@ -322,9 +420,9 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
 
         {/* Popular Bento Grid */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.md }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Món ngon thịnh hành 🔥</Text>
+          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Món ngon thịnh hành 🔥</Text>
           <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Tính năng xem thêm đang được phát triển!')}>
-            <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Xem thêm</Text>
+            <Text style={{ color: '#c084fc', fontWeight: 'bold' }}>Xem thêm</Text>
           </TouchableOpacity>
         </View>
 
@@ -337,254 +435,71 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
           ))}
           {filteredRecipes.length === 0 && (
             <View style={{ padding: 40, alignItems: 'center' }}>
-              <Ionicons name="restaurant-outline" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-              <Text style={{ color: colors.textSecondary, marginTop: 16, fontFamily: 'Poppins_400Regular' }}>
+              <Ionicons name="restaurant-outline" size={48} color={themeColors.textSecondary} style={{ opacity: 0.5 }} />
+              <Text style={{ color: themeColors.textSecondary, marginTop: 16, fontFamily: 'Poppins_400Regular' }}>
                 Chưa có món nào trong mục này...
               </Text>
             </View>
           )}
         </View>
 
-        <View style={{ height: 120 }} />
+          {/* Empty Space for Bottom Nav handled by contentContainerStyle */}
       </ScrollView>
     </SafeAreaView>
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  mainHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  safeArea: { flex: 1 },
+  container: { flex: 1 },
+  mainHeader: { 
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 8,
   },
   headerIconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    width: 44, height: 44, borderRadius: borderRadius.full, justifyContent: 'center', alignItems: 'center',
   },
-  searchSection: {
-    width: '100%',
+  searchSection: { width: '100%' },
+  searchBar: { 
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+  searchInput: { flex: 1, marginLeft: 12, fontSize: 15, paddingVertical: 0 },
+  heroCard: { height: 240, borderRadius: borderRadius['4xl'], overflow: 'hidden' },
+  heroImage: { width: '100%', height: '100%' },
+  heroGradient: { flex: 1, padding: 24, justifyContent: 'flex-end' },
+  heroContent: {},
+  heroGreeting: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: 'bold', letterSpacing: 2, marginBottom: 8 },
+  heroTitle: { color: '#FFF', fontSize: 26, fontWeight: 'bold', lineHeight: 34, marginBottom: 16, letterSpacing: -0.5 },
+  heroBtn: { alignSelf: 'flex-start', paddingHorizontal: 20, paddingVertical: 10, borderRadius: borderRadius.xl },
+  heroBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  inventoryCard: { 
+    flexDirection: 'row', padding: 20, alignItems: 'center', justifyContent: 'space-between',
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 15,
-    paddingVertical: 0,
+  inventoryInfo: { flex: 1, marginRight: 10 },
+  inventoryBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: borderRadius.md, marginTop: 12 },
+  inventoryIconBox: { width: 70, height: 70, borderRadius: borderRadius.full, justifyContent: 'center', alignItems: 'center' },
+  plannerCard: { 
+    flexDirection: 'row', padding: 16, alignItems: 'center',
   },
-  heroCard: {
-    height: 240,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  inventoryCard: {
-    flexDirection: 'row',
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  inventoryInfo: {
-    flex: 1,
-    marginRight: 10,
-  },
-  inventoryBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 12,
-  },
-  inventoryIconBox: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  plannerCard: {
-    flexDirection: 'row',
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  plannerIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  plannerInfo: {
-    flex: 1,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroGradient: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: 24,
-    borderRadius: 32,
-  },
-  heroContent: {
-  },
-  heroGreeting: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  heroTitle: {
-    color: '#FFF',
-    fontSize: 22,
-    fontWeight: 'bold',
-    lineHeight: 30,
-    marginBottom: 16,
-  },
-  heroBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  heroBtnText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  categorySection: {
-  },
-  categoryPill: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
-  },
-  categoryText: {
-    fontSize: 14,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  bentoGridContainer: {
-    paddingHorizontal: 20,
-  },
-  bentoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  bentoCard: {
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  bentoGradient: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-    padding: 16,
-  },
-  bentoName: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10
-  },
-  bentoMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bentoTime: {
-    fontSize: 11,
-    marginLeft: 4,
-    fontWeight: '600'
-  },
-  trendingCard: {
-    width: 200,
-    height: 150,
-    marginRight: 16,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: '#F5F5F5',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  trendingImage: {
-    width: '100%',
-    height: '100%',
-  },
-  trendingGradient: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-    padding: 12,
-  },
-  trendingName: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 5,
-  },
-  trendingMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  trendingTime: {
-    color: '#FFF',
-    fontSize: 10,
-    marginLeft: 4,
-  },
+  plannerIconBox: { width: 60, height: 60, borderRadius: borderRadius.lg, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  plannerInfo: { flex: 1 },
+  categorySection: { },
+  categoryPill: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: borderRadius.lg },
+  categoryText: { fontSize: 14 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold' },
+  bentoGridContainer: { paddingHorizontal: 20 },
+  bentoRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  bentoCard: { overflow: 'hidden' },
+  bentoGradient: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', padding: 16 },
+  bentoName: { fontWeight: 'bold', fontSize: 16, marginBottom: 4, textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 10 },
+  bentoMeta: { flexDirection: 'row', alignItems: 'center' },
+  bentoTime: { fontSize: 11, marginLeft: 4, fontWeight: '600' },
+  trendingCard: { width: 200, height: 150, marginRight: 16, borderRadius: borderRadius.xl, overflow: 'hidden' },
+  trendingImage: { width: '100%', height: '100%' },
+  trendingGradient: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', padding: 12 },
+  trendingName: { color: '#ffffff', fontSize: 14, fontWeight: 'bold', textShadowColor: 'rgba(0, 0, 0, 0.75)', textShadowOffset: { width: -1, height: 1 }, textShadowRadius: 5 },
+  trendingMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  trendingTime: { color: '#ffffff', fontSize: 10, marginLeft: 4 },
 });

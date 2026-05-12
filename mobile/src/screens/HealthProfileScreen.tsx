@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, TextInput
 import AlertManager from '../components/CustomAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HealthProfile'>;
 
@@ -86,45 +87,41 @@ export default function HealthProfileScreen({ navigation }: Props) {
       style={[
         styles.chip,
         { 
-          backgroundColor: selected ? colors.primary : colors.card,
+          ...glass.card,
+          backgroundColor: selected ? themeColors.purple : themeColors.bgCard,
           borderWidth: 1,
-          borderColor: selected ? colors.primary : colors.border,
-          shadowColor: selected ? colors.primary : 'transparent',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: selected ? 0.2 : 0,
-          shadowRadius: 8,
-          elevation: selected ? 4 : 0,
+          borderColor: selected ? themeColors.purple : themeColors.borderCard,
         }
       ]}
       onPress={onPress}
     >
-      <Text style={{ color: selected ? '#FFF' : colors.textSecondary, fontWeight: selected ? '600' : '500', fontSize: 14 }}>
+      <Text style={{ color: selected ? themeColors.textPrimary : themeColors.textSecondary, fontWeight: selected ? '600' : '500', fontSize: 14 }}>
         {label}
       </Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { borderBottomColor: themeColors.borderCard }]}>
         <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={themeColors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[typography.h2, { color: colors.text, flex: 1, textAlign: 'center' }]}>Sức khỏe của bạn</Text>
+        <Text style={[typography.h2, { color: themeColors.textPrimary, flex: 1, textAlign: 'center' }]}>Sức khỏe của bạn</Text>
         <TouchableOpacity activeOpacity={0.7} onPress={saveProfile} style={styles.saveBtn}>
-          <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Lưu lại</Text>
+          <Text style={{ color: themeColors.purple, fontWeight: 'bold', fontSize: 16 }}>Lưu lại</Text>
         </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           
-          <View style={[styles.infoBanner, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}20`, borderWidth: 1 }]}>
-            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}20` }]}>
-              <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
+          <View style={[styles.infoBanner, { backgroundColor: `${themeColors.purple}10`, borderColor: themeColors.borderCard, borderWidth: 1 }]}>
+            <View style={[styles.iconWrapper, { backgroundColor: `${themeColors.purple}20` }]}>
+              <Ionicons name="shield-checkmark" size={20} color={themeColors.purple} />
             </View>
-            <Text style={[typography.body, { color: colors.text, marginLeft: 12, flex: 1, lineHeight: 22 }]}>
+            <Text style={[typography.body, { color: themeColors.textPrimary, marginLeft: 12, flex: 1, lineHeight: 22 }]}>
               Trợ lý bếp sẽ tự động điều chỉnh gia vị và nguyên liệu để đảm bảo an toàn tuyệt đối cho bạn.
             </Text>
           </View>
@@ -132,12 +129,12 @@ export default function HealthProfileScreen({ navigation }: Props) {
           {/* Bệnh mãn tính */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconBg, { backgroundColor: `${colors.error}15` }]}>
-                <Ionicons name="heart" size={18} color={colors.error} />
+              <View style={[styles.sectionIconBg, { backgroundColor: `${themeColors.pink}15` }]}>
+                <Ionicons name="heart" size={18} color={themeColors.pink} />
               </View>
               <View>
-                <Text style={[typography.h3, { color: colors.text, marginLeft: 12 }]}>Tình trạng sức khỏe</Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginLeft: 12, marginTop: 2 }}>Các bệnh lý cần lưu ý</Text>
+                <Text style={[typography.h3, { color: themeColors.textPrimary, marginLeft: 12 }]}>Tình trạng sức khỏe</Text>
+                <Text style={{ fontSize: 12, color: themeColors.textSecondary, marginLeft: 12, marginTop: 2 }}>Các bệnh lý cần lưu ý</Text>
               </View>
             </View>
             <View style={styles.chipContainer}>
@@ -159,8 +156,8 @@ export default function HealthProfileScreen({ navigation }: Props) {
                 <Ionicons name="thermometer" size={18} color="#FF9500" />
               </View>
               <View>
-                <Text style={[typography.h3, { color: colors.text, marginLeft: 12 }]}>Dấu hiệu cơ thể</Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginLeft: 12, marginTop: 2 }}>Để gợi ý món giải cảm, dễ tiêu</Text>
+                <Text style={[typography.h3, { color: themeColors.textPrimary, marginLeft: 12 }]}>Dấu hiệu cơ thể</Text>
+                <Text style={{ fontSize: 12, color: themeColors.textSecondary, marginLeft: 12, marginTop: 2 }}>Để gợi ý món giải cảm, dễ tiêu</Text>
               </View>
             </View>
             <View style={styles.chipContainer}>
@@ -182,8 +179,8 @@ export default function HealthProfileScreen({ navigation }: Props) {
                 <Ionicons name="leaf" size={18} color="#34C759" />
               </View>
               <View>
-                <Text style={[typography.h3, { color: colors.text, marginLeft: 12 }]}>Thói quen ăn uống</Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginLeft: 12, marginTop: 2 }}>Phương pháp ăn kiêng của bạn</Text>
+                <Text style={[typography.h3, { color: themeColors.textPrimary, marginLeft: 12 }]}>Thói quen ăn uống</Text>
+                <Text style={{ fontSize: 12, color: themeColors.textSecondary, marginLeft: 12, marginTop: 2 }}>Phương pháp ăn kiêng của bạn</Text>
               </View>
             </View>
             <View style={styles.chipContainer}>
@@ -205,21 +202,21 @@ export default function HealthProfileScreen({ navigation }: Props) {
                 <Ionicons name="warning" size={18} color="#FF9500" />
               </View>
               <View>
-                <Text style={[typography.h3, { color: colors.text, marginLeft: 12 }]}>Kiêng kỵ & Dị ứng</Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginLeft: 12, marginTop: 2 }}>Các nguyên liệu cần tuyệt đối tránh</Text>
+                <Text style={[typography.h3, { color: themeColors.textPrimary, marginLeft: 12 }]}>Kiêng kỵ & Dị ứng</Text>
+                <Text style={{ fontSize: 12, color: themeColors.textSecondary, marginLeft: 12, marginTop: 2 }}>Các nguyên liệu cần tuyệt đối tránh</Text>
               </View>
             </View>
             
             <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+                style={[styles.input, { ...glass.card, backgroundColor: themeColors.bgCard, color: themeColors.textPrimary, borderColor: themeColors.borderCard }]}
                 placeholder="Nhập nguyên liệu (VD: Tôm, Đậu phộng)..."
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={themeColors.textMuted}
                 value={allergyInput}
                 onChangeText={setAllergyInput}
                 onSubmitEditing={addAllergy}
               />
-              <TouchableOpacity style={[styles.addBtn, { backgroundColor: allergyInput.trim() ? colors.primary : colors.border }]} onPress={addAllergy} disabled={!allergyInput.trim()}>
+              <TouchableOpacity style={[styles.addBtn, { backgroundColor: allergyInput.trim() ? themeColors.purple : themeColors.borderCard }]} onPress={addAllergy} disabled={!allergyInput.trim()}>
                 <Ionicons name="add" size={24} color="#FFF" />
               </TouchableOpacity>
             </View>
@@ -228,11 +225,11 @@ export default function HealthProfileScreen({ navigation }: Props) {
               {allergies.map(item => (
                 <TouchableOpacity
                   key={item}
-                  style={[styles.allergyChip, { backgroundColor: `${colors.error}10`, borderColor: `${colors.error}30` }]}
+                  style={[styles.allergyChip, { backgroundColor: `${themeColors.pink}10`, borderColor: `${themeColors.pink}30` }]}
                   onPress={() => removeAllergy(item)}
                 >
-                  <Text style={{ color: colors.error, marginRight: 8, fontWeight: '500' }}>{item}</Text>
-                  <Ionicons name="close-circle" size={18} color={colors.error} />
+                  <Text style={{ color: themeColors.pink, marginRight: 8, fontWeight: '500' }}>{item}</Text>
+                  <Ionicons name="close-circle" size={18} color={themeColors.pink} />
                 </TouchableOpacity>
               ))}
             </View>

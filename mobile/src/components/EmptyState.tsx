@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme/theme';
 import AnimatedButton from './AnimatedButton';
@@ -10,7 +10,7 @@ interface EmptyStateProps {
   description: string;
   buttonText?: string;
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ 
@@ -25,7 +25,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}10` }]}>
+      <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}20` }]}>
         <Ionicons name={icon} size={48} color={colors.primary} />
       </View>
       <Text style={[typography.h2, { color: colors.text, marginTop: spacing.lg, textAlign: 'center' }]}>

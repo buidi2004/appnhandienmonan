@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput, Dimensions, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AlertManager from '../components/CustomAlert';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'IngredientReview'>;
 const { width } = Dimensions.get('window');
@@ -48,22 +49,22 @@ export default function IngredientReviewScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <Ionicons name="arrow-back" size={20} color={themeColors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity activeOpacity={0.7} onPress={handleRescan} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="camera-outline" size={20} color={colors.text} />
+        <TouchableOpacity activeOpacity={0.7} onPress={handleRescan} style={[styles.backBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <Ionicons name="camera-outline" size={20} color={themeColors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Title */}
-        <Text style={[styles.screenTitle, { color: colors.text }]}>Xác nhận{'\n'}nguyên liệu</Text>
-        <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.screenTitle, { color: themeColors.textPrimary }]}>Xác nhận{'\n'}nguyên liệu</Text>
+        <Text style={[styles.screenSubtitle, { color: themeColors.textSecondary }]}>
           Kiểm tra kết quả AI nhận diện, thêm hoặc xóa nếu cần
         </Text>
 
@@ -81,61 +82,61 @@ export default function IngredientReviewScreen({ route, navigation }: Props) {
         )}
 
         {/* Detection Summary */}
-        <View style={[styles.summaryCard, { backgroundColor: `${colors.primary}08` }]}>
-          <Ionicons name="scan-outline" size={18} color={colors.primary} />
-          <Text style={[styles.summaryText, { color: colors.text }]}>
-            Phát hiện <Text style={{ fontWeight: '800', color: colors.primary }}>{ingredients.length}</Text> nguyên liệu
+        <View style={[styles.summaryCard, { backgroundColor: `${themeColors.purple}08` }]}>
+          <Ionicons name="scan-outline" size={18} color={themeColors.purple} />
+          <Text style={[styles.summaryText, { color: themeColors.textPrimary }]}>
+            Phát hiện <Text style={{ fontWeight: '800', color: themeColors.purple }}>{ingredients.length}</Text> nguyên liệu
           </Text>
         </View>
 
         {/* Ingredient List */}
         <View style={styles.ingredientList}>
           {ingredients.map((item, index) => (
-            <View key={index} style={[styles.ingredientRow, { backgroundColor: colors.card }]}>
-              <View style={[styles.ingredientDot, { backgroundColor: colors.success }]} />
-              <Text style={[styles.ingredientName, { color: colors.text }]}>{item}</Text>
+            <View key={index} style={[styles.ingredientRow, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+              <View style={[styles.ingredientDot, { backgroundColor: '#43E97B' }]} />
+              <Text style={[styles.ingredientName, { color: themeColors.textPrimary }]}>{item}</Text>
               <TouchableOpacity activeOpacity={0.7} onPress={() => removeIngredient(index)} style={styles.removeBtn}>
-                <Ionicons name="close-circle" size={22} color={`${colors.textSecondary}60`} />
+                <Ionicons name="close-circle" size={22} color={`${themeColors.textSecondary}60`} />
               </TouchableOpacity>
             </View>
           ))}
 
           {/* Add New */}
           {addingNew ? (
-            <View style={[styles.addInputRow, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+            <View style={[styles.addInputRow, { ...glass.card, backgroundColor: themeColors.bgCard, borderColor: themeColors.purple }]}>
               <TextInput
-                style={[styles.addInput, { color: colors.text }]}
+                style={[styles.addInput, { color: themeColors.textPrimary }]}
                 placeholder="Nhập tên nguyên liệu..."
-                placeholderTextColor={`${colors.textSecondary}80`}
+                placeholderTextColor={`${themeColors.textSecondary}80`}
                 value={newIngredient}
                 onChangeText={setNewIngredient}
                 onSubmitEditing={addIngredient}
                 autoFocus
                 returnKeyType="done"
               />
-              <TouchableOpacity activeOpacity={0.7} onPress={addIngredient} style={[styles.confirmAddBtn, { backgroundColor: colors.primary }]}>
+              <TouchableOpacity activeOpacity={0.7} onPress={addIngredient} style={[styles.confirmAddBtn, { backgroundColor: themeColors.purple }]}>
                 <Ionicons name="checkmark" size={18} color="#FFF" />
               </TouchableOpacity>
               <TouchableOpacity activeOpacity={0.7} onPress={() => { setAddingNew(false); setNewIngredient(''); }}>
-                <Ionicons name="close" size={22} color={colors.textSecondary} />
+                <Ionicons name="close" size={22} color={themeColors.textSecondary} />
               </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity
               activeOpacity={0.7}
-              style={[styles.addNewBtn, { borderColor: `${colors.primary}40` }]}
+              style={[styles.addNewBtn, { borderColor: `${themeColors.purple}40` }]}
               onPress={() => setAddingNew(true)}
             >
-              <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-              <Text style={[styles.addNewText, { color: colors.primary }]}>Thêm nguyên liệu</Text>
+              <Ionicons name="add-circle-outline" size={20} color={themeColors.purple} />
+              <Text style={[styles.addNewText, { color: themeColors.purple }]}>Thêm nguyên liệu</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Tips */}
-        <View style={[styles.tipBox, { backgroundColor: `${colors.primary}08` }]}>
-          <Ionicons name="bulb-outline" size={16} color={colors.primary} />
-          <Text style={[styles.tipText, { color: colors.textSecondary }]}>
+        <View style={[styles.tipBox, { backgroundColor: `${themeColors.purple}08` }]}>
+          <Ionicons name="bulb-outline" size={16} color={themeColors.purple} />
+          <Text style={[styles.tipText, { color: themeColors.textSecondary }]}>
             Thêm gia vị (muối, tiêu, nước mắm...) để AI gợi ý chính xác hơn
           </Text>
         </View>
@@ -144,15 +145,15 @@ export default function IngredientReviewScreen({ route, navigation }: Props) {
       </ScrollView>
 
       {/* Bottom CTA */}
-      <View style={[styles.bottomBar, { backgroundColor: colors.background }]}>
+      <View style={[styles.bottomBar, { backgroundColor: themeColors.bgPrimary }]}>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleContinue}
           disabled={ingredients.length === 0}
         >
           <LinearGradient
-            colors={ingredients.length > 0 ? [colors.primary, `${colors.primary}DD`] : ['#CCC', '#BBB']}
-            style={styles.continueBtn}
+            colors={ingredients.length > 0 ? gradients.button : ['#555', '#444']}
+            style={{ ...glow.button, ...styles.continueBtn }}
           >
             <Text style={styles.continueBtnText}>Tìm công thức phù hợp</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFF" />

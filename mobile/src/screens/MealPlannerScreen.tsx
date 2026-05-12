@@ -12,12 +12,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimatedButton from '../components/AnimatedButton';
-import GlassCard from '../components/GlassCard';
+import { GlassCard } from '../components/ui/GlassCard';
+import { themeColors, gradients } from '../theme';
+import { glass } from '../theme/glass';
+import { glow } from '../theme/glow';
+import { borderWidth, borderRadius, borderColors, borderPresets } from '../theme/borders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlanner'>;
 
@@ -27,201 +31,171 @@ interface MealSlot {
   dinner: string;
 }
 
-interface WeeklyPlan {
-  [day: string]: MealSlot;
-}
-
-const DAYS = [
-  { id: 'Mon', label: 'Thứ 2' },
-  { id: 'Tue', label: 'Thứ 3' },
-  { id: 'Wed', label: 'Thứ 4' },
-  { id: 'Thu', label: 'Thứ 5' },
-  { id: 'Fri', label: 'Thứ 6' },
-  { id: 'Sat', label: 'Thứ 7' },
-  { id: 'Sun', label: 'Chủ Nhật' },
-];
+const DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+const MEALS = ['breakfast', 'lunch', 'dinner'] as const;
 
 export default function MealPlannerScreen({ navigation }: Props) {
-  const { colors, typography, spacing, borderRadius } = useAppTheme();
-  const [selectedDay, setSelectedDay] = useState('Mon');
-  const [plan, setPlan] = useState<WeeklyPlan>({});
-  const [loading, setLoading] = useState(true);
-  
-  // Modal state
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingSlot, setEditingSlot] = useState<'breakfast' | 'lunch' | 'dinner' | null>(null);
-  const [mealText, setMealText] = useState('');
+  const { typography, spacing } = useAppTheme();
+  const [planner, setPlanner] = useState<Record<string, MealSlot>>({});
+  const [selectedDay, setSelectedDay] = useState(DAYS[0]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editMeal, setEditMeal] = useState<{day: string, type: typeof MEALS[number]} | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   useEffect(() => {
-    loadPlan();
+    loadPlanner();
   }, []);
 
-  const loadPlan = async () => {
+  const loadPlanner = async () => {
     try {
-      const stored = await AsyncStorage.getItem('mealPlan');
-      if (stored) {
-        setPlan(JSON.parse(stored));
+      const saved = await AsyncStorage.getItem('mealPlanner');
+      if (saved) {
+        setPlanner(JSON.parse(saved));
       } else {
-        // Khởi tạo kế hoạch trống
-        const initial: WeeklyPlan = {};
-        DAYS.forEach(d => initial[d.id] = { breakfast: '', lunch: '', dinner: '' });
-        setPlan(initial);
+        const initial: Record<string, MealSlot> = {};
+        DAYS.forEach(day => {
+          initial[day] = { breakfast: '', lunch: '', dinner: '' };
+        });
+        setPlanner(initial);
       }
-    } catch (error) {
-      console.error('Failed to load meal plan', error);
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      console.log('Error loading planner', e);
     }
   };
 
-  const savePlan = async (newPlan: WeeklyPlan) => {
+  const savePlanner = async (newPlanner: Record<string, MealSlot>) => {
     try {
-      await AsyncStorage.setItem('mealPlan', JSON.stringify(newPlan));
-      setPlan(newPlan);
-    } catch (error) {
-      console.error('Failed to save meal plan', error);
+      await AsyncStorage.setItem('mealPlanner', JSON.stringify(newPlanner));
+    } catch (e) {
+      console.log('Error saving planner', e);
     }
   };
 
-  const openEdit = (slot: 'breakfast' | 'lunch' | 'dinner') => {
-    setEditingSlot(slot);
-    setMealText(plan[selectedDay]?.[slot] || '');
-    setModalVisible(true);
+  const handleEdit = (day: string, type: typeof MEALS[number]) => {
+    setEditMeal({ day, type });
+    setEditValue(planner[day]?.[type] || '');
+    setIsEditing(true);
   };
 
-  const handleSaveMeal = () => {
-    if (editingSlot) {
-      const newPlan = { ...plan };
-      newPlan[selectedDay] = { ...newPlan[selectedDay], [editingSlot]: mealText };
-      savePlan(newPlan);
-      setModalVisible(false);
+  const handleSave = () => {
+    if (editMeal) {
+      const newPlanner = {
+        ...planner,
+        [editMeal.day]: {
+          ...planner[editMeal.day],
+          [editMeal.type]: editValue
+        }
+      };
+      setPlanner(newPlanner);
+      savePlanner(newPlanner);
+    }
+    setIsEditing(false);
+    setEditMeal(null);
+  };
+
+  const getMealIcon = (type: string) => {
+    switch (type) {
+      case 'breakfast': return 'sunny-outline';
+      case 'lunch': return 'restaurant-outline';
+      case 'dinner': return 'moon-outline';
+      default: return 'fast-food-outline';
     }
   };
 
-  const renderSlot = (title: string, icon: string, slot: 'breakfast' | 'lunch' | 'dinner', color: string) => (
-    <AnimatedButton 
-      activeOpacity={0.7}
-      style={[styles.slotCard, { backgroundColor: colors.card, borderRadius: borderRadius.lg }]}
-      onPress={() => openEdit(slot)}
-    >
-      <View style={[styles.slotIcon, { backgroundColor: `${color}15` }]}>
-        <Ionicons name={icon as any} size={24} color={color} />
-      </View>
-      <View style={styles.slotContent}>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>{title}</Text>
-        <Text style={[typography.body, { color: plan[selectedDay]?.[slot] ? colors.text : colors.border, marginTop: 4 }]} numberOfLines={1}>
-          {plan[selectedDay]?.[slot] || 'Chưa có kế hoạch...'}
-        </Text>
-      </View>
-      <Ionicons name="create-outline" size={20} color={colors.border} />
-    </AnimatedButton>
-  );
+  const getMealTitle = (type: string) => {
+    switch (type) {
+      case 'breakfast': return 'Bữa sáng';
+      case 'lunch': return 'Bữa trưa';
+      case 'dinner': return 'Bữa tối';
+      default: return '';
+    }
+  };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <AnimatedButton activeOpacity={0.7} onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </AnimatedButton>
-        <Text style={[typography.h2, { color: colors.text, flex: 1, textAlign: 'center' }]}>Kế hoạch tuần</Text>
-        <View style={{ width: 24 }} /> {/* Placeholder to balance back button */}
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.bgPrimary }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={[typography.h1, { color: themeColors.textPrimary }]}>Kế hoạch ăn uống</Text>
+          <Text style={[typography.body, { color: themeColors.textSecondary }]}>Lên thực đơn cho cả tuần</Text>
+        </View>
 
-      {/* Day Selector */}
-      <View style={styles.daySelector}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.lg }}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.dayTabs}
+          contentContainerStyle={{ paddingHorizontal: 20 }}
+        >
           {DAYS.map(day => (
-            <AnimatedButton 
-              activeOpacity={0.7}
-              key={day.id}
-              onPress={() => setSelectedDay(day.id)}
+            <TouchableOpacity 
+              key={day}
+              onPress={() => setSelectedDay(day)}
               style={[
-                styles.dayPill, 
-                { 
-                  backgroundColor: selectedDay === day.id ? colors.primary : colors.card,
-                  borderColor: selectedDay === day.id ? colors.primary : colors.border,
-                }
+                styles.dayTab,
+                selectedDay === day && { backgroundColor: themeColors.purple }
               ]}
             >
-              <Text style={[styles.dayText, { color: selectedDay === day.id ? '#FFF' : colors.text }]}>
-                {day.label}
-              </Text>
-            </AnimatedButton>
+              <Text style={[
+                styles.dayTabText,
+                selectedDay === day && { color: '#FFF' }
+              ]}>{day}</Text>
+            </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg }}>
-        <View style={styles.summaryCard}>
-          <View style={[styles.summaryItem, { borderRightWidth: 1, borderRightColor: colors.border }]}>
-            <Text style={[typography.h2, { color: colors.primary }]}>2,100</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Kcal dự kiến</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={[typography.h2, { color: colors.success }]}>3/3</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>Bữa đã lên lịch</Text>
-          </View>
+        <View style={styles.mealList}>
+          {MEALS.map(mealType => (
+            <GlassCard key={mealType} style={styles.mealCard}>
+              <View style={styles.mealHeader}>
+                <View style={styles.mealTitleRow}>
+                  <Ionicons name={getMealIcon(mealType)} size={20} color={themeColors.purple} />
+                  <Text style={[typography.h3, { color: themeColors.textPrimary, marginLeft: 10 }]}>
+                    {getMealTitle(mealType)}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => handleEdit(selectedDay, mealType)}>
+                  <Ionicons name="create-outline" size={20} color={themeColors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.mealContent}>
+                {planner[selectedDay]?.[mealType] ? (
+                  <Text style={[typography.body, { color: themeColors.textPrimary }]}>
+                    {planner[selectedDay][mealType]}
+                  </Text>
+                ) : (
+                  <Text style={[typography.body, { color: themeColors.textMuted, fontStyle: 'italic' }]}>
+                    Chưa có món ăn...
+                  </Text>
+                )}
+              </View>
+            </GlassCard>
+          ))}
         </View>
-
-        <Text style={[typography.h3, { color: colors.text, marginBottom: 16, marginTop: 10 }]}>Thực đơn hôm nay</Text>
-        
-        {renderSlot('Bữa sáng', 'sunny-outline', 'breakfast', '#FF9500')}
-        {renderSlot('Bữa trưa', 'restaurant-outline', 'lunch', colors.primary)}
-        {renderSlot('Bữa tối', 'moon-outline', 'dinner', '#5856D6')}
-
-        <View style={[styles.tipBox, { backgroundColor: `${colors.primary}10`, marginTop: 20, marginBottom: 20 }]}>
-          <Ionicons name="bulb-outline" size={20} color={colors.primary} />
-          <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 10, flex: 1 }]}>
-            Mẹo: Lập kế hoạch trước giúp bạn tiết kiệm 30% thời gian đi chợ và chuẩn bị món ăn!
-          </Text>
-        </View>
-
-        {/* PRO FEATURE: Auto AI Plan */}
-        <AnimatedButton 
-          activeOpacity={0.8}
-          style={[styles.proButton, { backgroundColor: '#FFD700' }]}
-          onPress={() => {
-            AlertManager.alert(
-              'Tính năng Cao cấp', 
-              'Tính năng "Tự động lên lịch bằng AI" chỉ dành riêng cho tài khoản Pro. Nâng cấp ngay để tận hưởng đặc quyền này?',
-              [
-                { text: 'Để sau', style: 'cancel' },
-                { text: 'Nâng cấp Pro', onPress: () => navigation.navigate('ProUpgrade' as any) }
-              ]
-            );
-          }}
-        >
-          <Ionicons name="sparkles" size={20} color="#000" />
-          <Text style={[typography.h3, { color: '#000', marginLeft: 8 }]}>Tự động gợi ý lịch ăn (Pro)</Text>
-        </AnimatedButton>
       </ScrollView>
 
-      {/* Edit Modal */}
-      <Modal visible={modalVisible} transparent animationType="fade">
+      <Modal visible={isEditing} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background, borderRadius: borderRadius.xl }]}>
-            <Text style={[typography.h3, { color: colors.text, marginBottom: 16 }]}>
-              {editingSlot === 'breakfast' ? 'Lên lịch Bữa sáng' : editingSlot === 'lunch' ? 'Lên lịch Bữa trưa' : 'Lên lịch Bữa tối'}
+          <GlassCard style={styles.modalCard}>
+            <Text style={[typography.h2, { color: themeColors.textPrimary, marginBottom: 20 }]}>
+              {editMeal ? `${getMealTitle(editMeal.type)} - ${editMeal.day}` : 'Thêm món'}
             </Text>
-            
             <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderRadius: borderRadius.md }]}
-              placeholder="Tên món ăn hoặc tên công thức..."
-              placeholderTextColor={colors.textSecondary}
-              value={mealText}
-              onChangeText={setMealText}
-              autoFocus
+              style={styles.input}
+              placeholder="Tên món ăn..."
+              placeholderTextColor={themeColors.textMuted}
+              value={editValue}
+              onChangeText={setEditValue}
+              multiline
             />
-
             <View style={styles.modalButtons}>
-              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.border }]} onPress={() => setModalVisible(false)}>
-                <Text style={{ color: colors.textSecondary }}>Hủy</Text>
-              </AnimatedButton>
-              <AnimatedButton activeOpacity={0.7} style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={handleSaveMeal}>
-                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Lưu kế hoạch</Text>
-              </AnimatedButton>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
+                <Text style={{ color: themeColors.textPrimary }}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Lưu</Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          </GlassCard>
         </View>
       </Modal>
     </SafeAreaView>
@@ -229,79 +203,37 @@ export default function MealPlannerScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { 
-    height: 60, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  header: { padding: 20 },
+  dayTabs: { marginVertical: 10, height: 50 },
+  dayTab: {
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  backBtn: { padding: 4 },
-  daySelector: { paddingVertical: 16 },
-  dayPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingVertical: 8,
+    borderRadius: borderRadius.round,
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
     marginRight: 10,
+    height: 36,
+    justifyContent: 'center'
+  },
+  dayTabText: { color: themeColors.textSecondary, fontSize: 13, fontWeight: '600' },
+  mealList: { padding: 20 },
+  mealCard: { marginBottom: 16, padding: 16 },
+  mealHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  mealTitleRow: { flexDirection: 'row', alignItems: 'center' },
+  mealContent: { minHeight: 40, justifyContent: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 },
+  modalCard: { padding: 24 },
+  input: {
+    backgroundColor: 'rgba(30, 10, 60, 0.8)',
+    borderRadius: borderRadius.md,
+    color: '#FFF',
+    padding: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 20,
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)'
   },
-  dayText: { fontWeight: 'bold' },
-  summaryCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    paddingVertical: 20,
-    borderRadius: 20,
-    marginBottom: 24,
-  },
-  summaryItem: { flex: 1, alignItems: 'center' },
-  slotCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  slotIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  slotContent: { flex: 1 },
-  tipBox: {
-    flexDirection: 'row',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalContent: { padding: 24 },
-  input: { padding: 16, fontSize: 16 },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 },
-  modalBtn: { flex: 0.48, padding: 16, borderRadius: 12, alignItems: 'center' },
-  proButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 40,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  }
+  modalButtons: { flexDirection: 'row', gap: 12 },
+  cancelBtn: { flex: 1, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: borderRadius.md, backgroundColor: 'rgba(255,255,255,0.1)' },
+  saveBtn: { flex: 2, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: borderRadius.md, backgroundColor: themeColors.purple },
 });

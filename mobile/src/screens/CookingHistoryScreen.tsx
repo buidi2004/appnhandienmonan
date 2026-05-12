@@ -2,12 +2,16 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { themeColors, gradients } from '../theme';
+import { glass } from '../theme/glass';
+import { glow } from '../theme/glow';
+import { borderWidth, borderRadius, borderColors, borderPresets } from '../theme/borders';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CookingHistory'>;
 
@@ -93,35 +97,35 @@ export default function CookingHistoryScreen({ navigation }: Props) {
   const todayIndex = (new Date().getDay() + 6) % 7; // Monday = 0
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       {/* Custom header - asymmetric spacing */}
       <View style={styles.header}>
-        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+        <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()} style={[styles.backBtn, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <Ionicons name="arrow-back" size={20} color={themeColors.textPrimary} />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Title section - left aligned, editorial feel */}
-        <Text style={[styles.screenTitle, { color: colors.text }]}>Hành trình{'\n'}của bạn</Text>
-        <Text style={[styles.screenSubtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.screenTitle, { color: themeColors.textPrimary }]}>Hành trình{'\n'}của bạn</Text>
+        <Text style={[styles.screenSubtitle, { color: themeColors.textSecondary }]}>
           Theo dõi tiến bộ nấu ăn mỗi ngày
         </Text>
 
         {/* Empty State */}
         {stats.totalCooked === 0 && stats.totalScans === 0 && stats.totalFavorites === 0 ? (
           <View style={styles.emptyState}>
-            <View style={[styles.emptyIcon, { backgroundColor: `${colors.primary}08` }]}>
-              <Ionicons name="timer-outline" size={48} color={`${colors.textSecondary}40`} />
+            <View style={[styles.emptyIcon, { backgroundColor: `${themeColors.purple}08` }]}>
+              <Ionicons name="timer-outline" size={48} color={themeColors.textMuted} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Chưa có hoạt động</Text>
-            <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+            <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>Chưa có hoạt động</Text>
+            <Text style={[styles.emptyDesc, { color: themeColors.textSecondary }]}>
               Bắt đầu quét nguyên liệu và nấu món đầu tiên để xem thống kê tại đây
             </Text>
             <TouchableOpacity 
               activeOpacity={0.8}
-              style={[styles.emptyBtn, { backgroundColor: colors.primary }]}
+              style={[styles.emptyBtn, { ...glow.button, backgroundColor: themeColors.purple }]}
               onPress={() => navigation.goBack()}
             >
               <Text style={styles.emptyBtnText}>Bắt đầu nấu ăn</Text>
@@ -132,13 +136,13 @@ export default function CookingHistoryScreen({ navigation }: Props) {
         {/* Streak Banner - only when active */}
         {stats.streak > 0 && (
           <LinearGradient
-            colors={['#FF6B35', '#F7461E']}
+            colors={gradients.button}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0.6 }}
-            style={styles.streakBanner}
+            style={{ ...glow.button, ...styles.streakBanner }}
           >
             <View style={styles.streakLeft}>
               <View style={styles.streakFireBg}>
-                <Ionicons name="flame" size={22} color="#FFF" />
+                <Ionicons name="flame" size={22} color={themeColors.textPrimary} />
               </View>
               <View style={{ marginLeft: 14 }}>
                 <Text style={styles.streakCount}>{stats.streak}</Text>
@@ -151,31 +155,31 @@ export default function CookingHistoryScreen({ navigation }: Props) {
 
         {/* Stats - asymmetric bento grid */}
         <View style={styles.statsRow}>
-          <View style={[styles.statLarge, { backgroundColor: colors.card }]}>
-            <View style={[styles.statDot, { backgroundColor: colors.primary }]} />
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.totalCooked}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Món đã nấu</Text>
+          <View style={[styles.statLarge, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+            <View style={[styles.statDot, { backgroundColor: themeColors.purple }]} />
+            <Text style={[styles.statValue, { color: themeColors.textPrimary }]}>{stats.totalCooked}</Text>
+            <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Món đã nấu</Text>
           </View>
           <View style={styles.statsCol}>
-            <View style={[styles.statSmall, { backgroundColor: colors.card }]}>
-              <Ionicons name="camera-outline" size={18} color="#5856D6" />
-              <Text style={[styles.statSmValue, { color: colors.text }]}>{stats.totalScans}</Text>
-              <Text style={[styles.statSmLabel, { color: colors.textSecondary }]}>Quét AI</Text>
+            <View style={[styles.statSmall, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+              <Ionicons name="camera-outline" size={18} color={themeColors.purple} />
+              <Text style={[styles.statSmValue, { color: themeColors.textPrimary }]}>{stats.totalScans}</Text>
+              <Text style={[styles.statSmLabel, { color: themeColors.textSecondary }]}>Quét AI</Text>
             </View>
-            <View style={[styles.statSmall, { backgroundColor: colors.card }]}>
-              <Ionicons name="heart-outline" size={18} color="#FF3B30" />
-              <Text style={[styles.statSmValue, { color: colors.text }]}>{stats.totalFavorites}</Text>
-              <Text style={[styles.statSmLabel, { color: colors.textSecondary }]}>Yêu thích</Text>
+            <View style={[styles.statSmall, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+              <Ionicons name="heart-outline" size={18} color={themeColors.pink} />
+              <Text style={[styles.statSmValue, { color: themeColors.textPrimary }]}>{stats.totalFavorites}</Text>
+              <Text style={[styles.statSmLabel, { color: themeColors.textSecondary }]}>Yêu thích</Text>
             </View>
           </View>
         </View>
 
         {/* Weekly Chart - refined */}
-        <View style={[styles.chartCard, { backgroundColor: colors.card }]}>
+        <View style={[styles.chartCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
           <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: colors.text }]}>7 ngày gần nhất</Text>
-            <View style={[styles.chartBadge, { backgroundColor: `${colors.primary}12` }]}>
-              <Text style={[styles.chartBadgeText, { color: colors.primary }]}>
+            <Text style={[styles.chartTitle, { color: themeColors.textPrimary }]}>7 ngày gần nhất</Text>
+            <View style={[styles.chartBadge, { backgroundColor: `${themeColors.purple}12` }]}>
+              <Text style={[styles.chartBadgeText, { color: themeColors.purple }]}>
                 {stats.weeklyData.reduce((a, b) => a + b, 0)} món
               </Text>
             </View>
@@ -191,14 +195,14 @@ export default function CookingHistoryScreen({ navigation }: Props) {
                       styles.chartBar,
                       { 
                         height: `${barHeight}%`,
-                        backgroundColor: value > 0 ? (isToday ? colors.primary : `${colors.primary}60`) : `${colors.border}40`,
+                        backgroundColor: value > 0 ? (isToday ? themeColors.purple : `${themeColors.purple}60`) : `${themeColors.borderCard}40`,
                         borderRadius: 5,
                       }
                     ]} />
                   </View>
                   <Text style={[
                     styles.chartLabel,
-                    { color: isToday ? colors.primary : colors.textSecondary, fontWeight: isToday ? '800' : '500' }
+                    { color: isToday ? themeColors.purple : themeColors.textSecondary, fontWeight: isToday ? '800' : '500' }
                   ]}>
                     {days[index]}
                   </Text>
@@ -210,8 +214,8 @@ export default function CookingHistoryScreen({ navigation }: Props) {
 
         {/* Achievements - section header without emoji */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Thành tích</Text>
-          <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
+          <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Thành tích</Text>
+          <Text style={[styles.sectionCount, { color: themeColors.textSecondary }]}>
             {ACHIEVEMENTS.filter(a => {
               return (a.id === 'scanner' && stats.totalScans >= a.target) ||
                      (a.id === 'collector' && stats.totalFavorites >= a.target) ||
@@ -226,14 +230,14 @@ export default function CookingHistoryScreen({ navigation }: Props) {
                              (!['scanner', 'collector'].includes(a.id) && stats.totalCooked >= a.target);
             return (
               <View key={a.id} style={[
-                styles.achievementCard,
-                { backgroundColor: unlocked ? colors.card : `${colors.border}20` }
+                { ...glass.card, ...styles.achievementCard },
+                { backgroundColor: unlocked ? themeColors.bgCard : `${themeColors.bgCard}50` }
               ]}>
-                <View style={[styles.achievementIconBg, { backgroundColor: unlocked ? a.bg : `${colors.border}30` }]}>
-                  <Ionicons name={a.icon as any} size={24} color={unlocked ? a.color : `${colors.textSecondary}60`} />
+                <View style={[styles.achievementIconBg, { backgroundColor: unlocked ? a.bg : `${themeColors.bgCard}80` }]}>
+                  <Ionicons name={a.icon as any} size={24} color={unlocked ? a.color : themeColors.textMuted} />
                 </View>
-                <Text style={[styles.achievementTitle, { color: unlocked ? colors.text : `${colors.textSecondary}80` }]} numberOfLines={1}>{a.title}</Text>
-                <Text style={[styles.achievementDesc, { color: unlocked ? colors.textSecondary : `${colors.textSecondary}50` }]}>{a.desc}</Text>
+                <Text style={[styles.achievementTitle, { color: unlocked ? themeColors.textPrimary : themeColors.textMuted }]} numberOfLines={1}>{a.title}</Text>
+                <Text style={[styles.achievementDesc, { color: unlocked ? themeColors.textSecondary : themeColors.textMuted }]}>{a.desc}</Text>
                 {unlocked && (
                   <View style={styles.unlockedCheck}>
                     <Ionicons name="checkmark-circle" size={16} color="#34C759" />
@@ -247,19 +251,19 @@ export default function CookingHistoryScreen({ navigation }: Props) {
         {/* Pro CTA - editorial style */}
         <TouchableOpacity activeOpacity={0.85} onPress={() => navigation.navigate('ProUpgrade')}>
           <LinearGradient
-            colors={['#1C1C1E', '#2C2C2E']}
-            style={styles.proCTA}
+            colors={gradients.banner}
+            style={{ ...glow.button, ...styles.proCTA }}
           >
             <View style={styles.proCTAContent}>
               <View style={styles.proIconWrapper}>
-                <Ionicons name="diamond" size={20} color="#FFD700" />
+                <Ionicons name="diamond" size={20} color={themeColors.purple} />
               </View>
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={styles.proCTATitle}>Mở khóa toàn bộ</Text>
                 <Text style={styles.proCTADesc}>Thống kê nâng cao, AI không giới hạn</Text>
               </View>
               <View style={styles.proCTAArrow}>
-                <Ionicons name="arrow-forward" size={16} color="#FFF" />
+                <Ionicons name="arrow-forward" size={16} color={themeColors.textPrimary} />
               </View>
             </View>
           </LinearGradient>
@@ -277,7 +281,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4,
   },
   backBtn: { 
-    width: 40, height: 40, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: borderRadius.md, justifyContent: 'center', alignItems: 'center',
   },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   
@@ -288,42 +292,42 @@ const styles = StyleSheet.create({
   // Streak
   streakBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 18, borderRadius: 22, marginBottom: 24,
+    padding: 18, borderRadius: borderRadius.xl, marginBottom: 24,
   },
   streakLeft: { flexDirection: 'row', alignItems: 'center' },
   streakFireBg: { 
-    width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', 
+    width: 44, height: 44, borderRadius: borderRadius.md, backgroundColor: 'rgba(255,255,255,0.2)', 
     justifyContent: 'center', alignItems: 'center',
   },
-  streakCount: { color: '#FFF', fontSize: 26, fontWeight: '900', lineHeight: 30 },
+  streakCount: { color: themeColors.textPrimary, fontSize: 26, fontWeight: '900', lineHeight: 30 },
   streakLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '500' },
   streakMotivation: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
 
   // Stats bento
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   statLarge: { 
-    flex: 1.2, padding: 24, borderRadius: 22, justifyContent: 'flex-end', minHeight: 140,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
+    flex: 1.2, padding: 24, justifyContent: 'flex-end', minHeight: 140,
+    ...borderPresets.card,
   },
   statDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 16 },
   statValue: { fontSize: 42, fontWeight: '900', lineHeight: 46, letterSpacing: -1 },
   statLabel: { fontSize: 13, fontWeight: '500', marginTop: 4 },
   statsCol: { flex: 1, gap: 12 },
   statSmall: { 
-    flex: 1, padding: 16, borderRadius: 18, justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1,
+    flex: 1, padding: 16, justifyContent: 'center',
+    ...borderPresets.card,
   },
   statSmValue: { fontSize: 22, fontWeight: '800', marginTop: 6, letterSpacing: -0.5 },
   statSmLabel: { fontSize: 11, fontWeight: '500', marginTop: 2 },
 
   // Chart
   chartCard: {
-    padding: 22, borderRadius: 22, marginBottom: 28,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
+    padding: 22, marginBottom: 28,
+    ...borderPresets.card,
   },
   chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   chartTitle: { fontSize: 17, fontWeight: '700' },
-  chartBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
+  chartBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: borderRadius.xl },
   chartBadgeText: { fontSize: 12, fontWeight: '700' },
   chartContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 120 },
   chartBarWrapper: { alignItems: 'center', flex: 1 },
@@ -337,22 +341,23 @@ const styles = StyleSheet.create({
   sectionCount: { fontSize: 14, fontWeight: '600' },
   achievementsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
   achievementCard: {
-    width: (width - 60) / 3, paddingVertical: 18, paddingHorizontal: 6, borderRadius: 18, alignItems: 'center',
+    width: (width - 60) / 3, paddingVertical: 18, paddingHorizontal: 6, alignItems: 'center',
+    ...borderPresets.card,
   },
-  achievementIconBg: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  achievementIconBg: { width: 48, height: 48, borderRadius: borderRadius.md, justifyContent: 'center', alignItems: 'center' },
   achievementTitle: { fontSize: 12, fontWeight: '700', marginTop: 10, textAlign: 'center' },
   achievementDesc: { fontSize: 10, marginTop: 3, textAlign: 'center' },
   unlockedCheck: { position: 'absolute', top: 8, right: 8 },
 
   // Pro CTA
-  proCTA: { borderRadius: 20, overflow: 'hidden', marginBottom: 8 },
+  proCTA: { overflow: 'hidden', marginBottom: 8, ...borderPresets.card },
   proCTAContent: { flexDirection: 'row', alignItems: 'center', padding: 20 },
   proIconWrapper: { 
     width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,215,0,0.15)', 
     justifyContent: 'center', alignItems: 'center',
   },
-  proCTATitle: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  proCTADesc: { color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 2 },
+  proCTATitle: { color: themeColors.textPrimary, fontSize: 16, fontWeight: '700' },
+  proCTADesc: { color: themeColors.textMuted, fontSize: 12, marginTop: 2 },
   proCTAArrow: { 
     width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center', alignItems: 'center',
@@ -360,9 +365,9 @@ const styles = StyleSheet.create({
 
   // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 20 },
-  emptyIcon: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyIcon: { width: 100, height: 100, borderRadius: borderRadius.full, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   emptyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
   emptyDesc: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  emptyBtn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16 },
-  emptyBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+  emptyBtn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: borderRadius.lg },
+  emptyBtnText: { color: themeColors.textPrimary, fontSize: 15, fontWeight: '700' },
 });

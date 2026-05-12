@@ -5,10 +5,11 @@ import { useAppTheme } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../App';
+import { RootStackParamList } from '../navigation/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleDailyNotifications } from '../services/notificationService';
 import * as Notifications from 'expo-notifications';
+import { themeColors, gradients, glass, glow } from '../theme';
 
 export default function SettingsScreen() {
   const { colors, typography, spacing, borderRadius, isDark, isSystem, language, setManualTheme, setSystemTheme, setLanguage } = useAppTheme();
@@ -71,7 +72,8 @@ export default function SettingsScreen() {
       style={[
         styles.settingRow, 
         { 
-          backgroundColor: colors.card, 
+          ...glass.card,
+          backgroundColor: themeColors.bgCard, 
           borderRadius: borderRadius.md, 
           paddingHorizontal: spacing.md, 
           paddingVertical: spacing.md, 
@@ -80,64 +82,64 @@ export default function SettingsScreen() {
       ]}
     >
       <View style={styles.settingLeft}>
-        <Ionicons name={icon as any} size={22} color={colors.primary} />
+        <Ionicons name={icon as any} size={22} color={themeColors.purple} />
         <View style={{ marginLeft: spacing.md }}>
-          <Text style={[typography.body, { color: colors.text }]}>{title}</Text>
-          {subtitle ? <Text style={[typography.caption, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
+          <Text style={[typography.body, { color: themeColors.textPrimary }]}>{title}</Text>
+          {subtitle ? <Text style={[typography.caption, { color: themeColors.textSecondary }]}>{subtitle}</Text> : null}
         </View>
       </View>
       {hasSwitch ? (
         <Switch 
           value={value} 
           onValueChange={onValueChange} 
-          trackColor={{ false: colors.border, true: `${colors.primary}80` }}
-          thumbColor={value ? colors.primary : '#f4f3f4'}
+          trackColor={{ false: themeColors.borderCard, true: `${themeColors.purple}80` }}
+          thumbColor={value ? themeColors.purple : '#f4f3f4'}
         />
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {value && typeof value === 'string' && <Text style={[typography.body, { color: colors.textSecondary, marginRight: 8 }]}>{value}</Text>}
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          {value && typeof value === 'string' && <Text style={[typography.body, { color: themeColors.textSecondary, marginRight: 8 }]}>{value}</Text>}
+          <Ionicons name="chevron-forward" size={20} color={themeColors.textSecondary} />
         </View>
       )}
     </TouchableOpacity>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: themeColors.bgPrimary }]}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
-        <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>THÔNG BÁO</Text>
+        <Text style={[styles.sectionTitle, typography.h3, { color: themeColors.textSecondary }]}>THÔNG BÁO</Text>
         {renderSettingRow('notifications-outline', 'Thông báo đẩy', true, pushNotif, handleTogglePushNotif)}
         {renderSettingRow('mail-outline', 'Email thông báo', true, emailNotif, setEmailNotif)}
 
-        <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>GIAO DIỆN</Text>
+        <Text style={[styles.sectionTitle, typography.h3, { color: themeColors.textSecondary }]}>GIAO DIỆN</Text>
         {renderSettingRow('moon-outline', 'Chế độ tối', true, isDark, (val) => setManualTheme(val ? 'dark' : 'light'))}
         {renderSettingRow('phone-portrait-outline', 'Theo hệ thống', true, isSystem, (val) => val ? setSystemTheme() : setManualTheme(isDark ? 'dark' : 'light'))}
         {renderSettingRow('language-outline', 'Ngôn ngữ', false, currentLanguageLabel, undefined, undefined, handleLanguageChange)}
 
         {/* Nhóm 1: Dữ liệu & Bộ nhớ */}
-        <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>DỮ LIỆU & BỘ NHỚ</Text>
+        <Text style={[styles.sectionTitle, typography.h3, { color: themeColors.textSecondary }]}>DỮ LIỆU & BỘ NHỚ</Text>
         {renderSettingRow('trash-outline', 'Xóa bộ nhớ đệm', false, cacheSize, undefined, undefined, handleClearCache)}
         {renderSettingRow('cloud-upload-outline', 'Chất lượng tải lên', false, 'Tiết kiệm')}
 
         {/* Nhóm 2: Ngôn ngữ */}
-        <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>NGÔN NGỮ & KHU VỰC</Text>
+        <Text style={[styles.sectionTitle, typography.h3, { color: themeColors.textSecondary }]}>NGÔN NGỮ & KHU VỰC</Text>
         {renderSettingRow('language-outline', 'Ngôn ngữ', false, 'Tiếng Việt')}
 
-        <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>BẢO MẬT</Text>
+        <Text style={[styles.sectionTitle, typography.h3, { color: themeColors.textSecondary }]}>BẢO MẬT</Text>
         {renderSettingRow('lock-closed-outline', 'Đổi mật khẩu', false, undefined, undefined, undefined, () => navigation.navigate('ForgotPassword'))}
         {renderSettingRow('finger-print-outline', 'Xác thực sinh trắc học', true, true)}
 
         {/* Nhóm 3: Hỗ trợ & Thông tin */}
-        <Text style={[styles.sectionTitle, typography.h3, { color: colors.textSecondary }]}>HỖ TRỢ & THÔNG TIN</Text>
+        <Text style={[styles.sectionTitle, typography.h3, { color: themeColors.textSecondary }]}>HỖ TRỢ & THÔNG TIN</Text>
         {renderSettingRow('information-circle-outline', 'Giới thiệu', false, 'Bản 1.0.0', undefined, undefined, () => AlertManager.alert('Smart Cooking AI', 'Ứng dụng hỗ trợ nấu ăn thông minh hàng đầu.\nPhiên bản 1.0.0\n© 2026 SmartCooking Team'))}
         {renderSettingRow('document-text-outline', 'Điều khoản & Chính sách', false, undefined, undefined, undefined, () => navigation.navigate('Terms'))}
         {renderSettingRow('bug-outline', 'Báo lỗi / Gửi phản hồi', false, undefined, undefined, undefined, () => AlertManager.alert('Phản hồi', 'Cảm ơn bạn! Chúng tôi đã ghi nhận yêu cầu hỗ trợ.'))}
 
         <TouchableOpacity 
-          style={[styles.deleteBtn, { marginTop: spacing.xl, padding: spacing.md, borderRadius: borderRadius.md, backgroundColor: `${colors.error}10` }]}
+          style={[styles.deleteBtn, { marginTop: spacing.xl, padding: spacing.md, borderRadius: borderRadius.md, backgroundColor: 'rgba(255,100,200,0.1)' }]}
           onPress={() => setIsDeleteModalVisible(true)}
         >
-          <Text style={[typography.body, { color: colors.error, textAlign: 'center', fontWeight: 'bold' }]}>Xóa tài khoản</Text>
+          <Text style={[typography.body, { color: themeColors.pink, textAlign: 'center', fontWeight: 'bold' }]}>Xóa tài khoản</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -150,21 +152,21 @@ export default function SettingsScreen() {
         animationType="fade"
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card, borderRadius: borderRadius.xl }]}>
-            <Ionicons name="warning" size={48} color={colors.error} style={{ marginBottom: spacing.md }} />
-            <Text style={[typography.h2, { color: colors.text, textAlign: 'center', marginBottom: spacing.sm }]}>Xác nhận xóa?</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.xl }]}>
+          <View style={[styles.modalContent, { ...glass.card, backgroundColor: themeColors.bgBottomNav, borderRadius: borderRadius.xl }]}>
+            <Ionicons name="warning" size={48} color={themeColors.pink} style={{ marginBottom: spacing.md }} />
+            <Text style={[typography.h2, { color: themeColors.textPrimary, textAlign: 'center', marginBottom: spacing.sm }]}>Xác nhận xóa?</Text>
+            <Text style={[typography.body, { color: themeColors.textSecondary, textAlign: 'center', marginBottom: spacing.xl }]}>
               Bạn có chắc chắn muốn xóa tài khoản? Mọi dữ liệu món ăn đã lưu sẽ bị mất vĩnh viễn.
             </Text>
             <View style={styles.modalActions}>
               <TouchableOpacity 
-                style={[styles.modalBtn, { backgroundColor: colors.border }]} 
+                style={[styles.modalBtn, { backgroundColor: themeColors.pink }]} 
                 onPress={() => setIsDeleteModalVisible(false)}
               >
-                <Text style={[typography.body, { color: colors.text, fontWeight: 'bold' }]}>Hủy</Text>
+                <Text style={[typography.body, { color: themeColors.textPrimary, fontWeight: 'bold' }]}>Xóa</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.modalBtn, { backgroundColor: colors.error }]} 
+                style={[styles.modalBtn, { backgroundColor: '#FF3B30' }]} 
                 onPress={() => {
                   setIsDeleteModalVisible(false);
                   AlertManager.alert('Đã yêu cầu', 'Tài khoản của bạn sẽ được xóa trong vòng 24h.');
