@@ -359,14 +359,12 @@ export default function ProfileScreen({ navigation: tabNavigation }: Props) {
           activeOpacity={0.7}
           onPress={handleLogout}
           style={[styles.logoutBtn, { 
-            backgroundColor: 'rgba(220, 38, 38, 0.18)',
-            borderWidth: borderWidth.thick,
-            borderColor: borderColors.error,
-            borderRadius: borderRadius.lg, 
+            backgroundColor: 'rgba(220, 38, 38, 0.12)',
+            ...borderPresets.cardRed,
             marginTop: spacing.xl,
             shadowColor: '#dc2626',
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4,
+            shadowOpacity: 0.3,
             shadowRadius: 12,
             elevation: 6,
           }]}

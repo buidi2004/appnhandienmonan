@@ -165,7 +165,7 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
         {/* Main stat cards - bento layout */}
         <View style={styles.mainStats}>
           {/* Calorie card - large */}
-          <View style={[styles.calorieCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <View style={[styles.calorieCard, { ...glass.card, backgroundColor: themeColors.bgCard, ...borderPresets.cardPurple }]}>
             <View style={styles.calorieHeader}>
               <View>
                 <Text style={[styles.calorieLabel, { color: themeColors.textSecondary }]}>Calories</Text>
@@ -200,7 +200,7 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
           </View>
 
           {/* Water card */}
-          <TouchableOpacity activeOpacity={0.7} onPress={addWater} style={[styles.waterCard, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+          <TouchableOpacity activeOpacity={0.7} onPress={addWater} style={[styles.waterCard, { ...glass.card, backgroundColor: themeColors.bgCard, ...borderPresets.cardPurple }]}>
             <Ionicons name="water" size={22} color="#007AFF" />
             <Text style={[styles.waterValue, { color: themeColors.textPrimary }]}>
               {goal.currentWater}<Text style={{ color: themeColors.textSecondary, fontSize: 14 }}>/{goal.waterTarget}</Text>
@@ -220,7 +220,7 @@ export default function NutritionDiaryScreen({ navigation }: Props) {
             { label: 'Protein', value: '30%', color: '#34C759', icon: 'barbell-outline' },
             { label: 'Fat', value: '25%', color: '#5856D6', icon: 'water-outline' },
           ].map((macro, i) => (
-            <View key={i} style={[styles.macroItem, { ...glass.card, backgroundColor: themeColors.bgCard }]}>
+            <View key={i} style={[styles.macroItem, { ...glass.card, backgroundColor: themeColors.bgCard, ...borderPresets.cardPurple }]}>
               <Ionicons name={macro.icon as any} size={16} color={macro.color} />
               <Text style={[styles.macroValue, { color: themeColors.textPrimary }]}>{macro.value}</Text>
               <Text style={[styles.macroLabel, { color: themeColors.textSecondary }]}>{macro.label}</Text>
@@ -331,6 +331,15 @@ const styles = StyleSheet.create({
     shadowColor: '#a855f7', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 15, elevation: 4,
   },
   calorieHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  calorieLabel: { fontSize: 13, fontWeight: '600' },
+  calorieValue: { fontSize: 24, fontWeight: '900' },
+  calorieTarget: { fontSize: 14, marginLeft: 2 },
+  calorieRingWrapper: { width: 64, height: 64, justifyContent: 'center', alignItems: 'center' },
+  calorieRingCenter: { position: 'absolute' },
+  caloriePercent: { fontSize: 14, fontWeight: '700' },
+  progressBg: { height: 6, borderRadius: 3, marginTop: 16, overflow: 'hidden' },
+  progressFill: { height: '100%' },
+  remainingText: { fontSize: 12, marginTop: 6 },
 
   // Water
   waterCard: { 

@@ -63,6 +63,12 @@ export const borderPresets = {
     borderRadius: borderRadius.xl,
     overflow: 'hidden' as const,
   },
+  cardRed: {
+    borderWidth: borderWidth.normal,
+    borderColor: 'rgba(220, 38, 38, 0.5)',
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden' as const,
+  },
   button: {
     borderWidth: borderWidth.normal,
     borderColor: borderColors.white.medium,

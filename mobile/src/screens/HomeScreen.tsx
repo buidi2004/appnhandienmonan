@@ -250,7 +250,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
 
         {/* Smart Fridge Inventory Card */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.xl }]}>
-          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Tủ lạnh thông minh 🧊</Text>
+          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Tủ lạnh thông minh</Text>
         </View>
         <TouchableOpacity 
           activeOpacity={0.7}
@@ -302,7 +302,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
 
         {/* Meal Planner Card */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.md }]}>
-          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Kế hoạch ăn uống 📅</Text>
+          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Kế hoạch ăn uống</Text>
         </View>
         <TouchableOpacity 
           activeOpacity={0.7}
@@ -377,7 +377,7 @@ export default function HomeScreen({ navigation: tabNavigation }: HomeScreenProp
 
         {/* Chef's Specials - Horizontal Scroll */}
         <View style={[styles.sectionHeader, { paddingHorizontal: spacing.lg, marginTop: spacing.lg }]}>
-          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Gợi ý từ đầu bếp 👨‍🍳</Text>
+          <Text style={[styles.sectionTitle, { color: '#ffffff' }]}>Gợi ý từ đầu bếp</Text>
           <TouchableOpacity onPress={() => Alert.alert('Thông báo', 'Danh sách gợi ý đầy đủ đang được cập nhật!')}>
             <Text style={{ color: '#c084fc', fontWeight: 'bold' }}>Tất cả</Text>
           </TouchableOpacity>
