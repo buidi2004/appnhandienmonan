@@ -192,22 +192,5 @@ TRẢ VỀ KẾT QUẢ DƯỚI DẠNG MẢNG JSON HỢP LỆ (BẮT BUỘC, CH�
     except Exception as e:
         print(f"[AI] Lỗi khi tạo công thức: {e}")
         logger.error(f"Error generating recipes: {str(e)}", exc_info=True)
-        return [
-            {
-                "title": "Lỗi kết nối AI",
-                "ingredients": ingredients,
-                "available_ingredients": ingredients,
-                "missing_ingredients": [],
-                "readiness": "health_check",
-                "instructions": f"Lỗi: {str(e)}",
-                "prep_time": "N/A",
-                "difficulty": "N/A",
-                "calories": "N/A",
-                "health_score": 0,
-                "health_benefits": [],
-                "health_warnings": ["Lỗi hệ thống."],
-                "substitutions": [],
-                "nutrition_detail": {},
-                "tips": "Vui lòng kiểm tra API key và thử lại."
-            }
-        ]
+        # Raise the exception so the route handler can return a proper 500 error
+        raise e

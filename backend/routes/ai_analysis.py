@@ -25,6 +25,9 @@ except ImportError:
 logger = logging.getLogger(__name__)
 ai_bp = Blueprint('ai', __name__)
 
+# Import AI service
+from services.ai_service import generate_recipes as ai_generate_recipes
+
 # Import limiter from app
 from flask import current_app
 
@@ -162,31 +165,14 @@ def suggest_recipes(user_id):
         health_profile = data.get('health_profile', {})
         pantry_context = data.get('pantry_context', [])
         
-        prompt = f"""
-        Dựa trên danh sách nguyên liệu: {', '.join(ingredients)}.
-        Nguyên liệu bổ sung có sẵn trong tủ lạnh: {', '.join(pantry_context)}.
-        Hồ sơ sức khỏe: {json.dumps(health_profile)}.
+        # Use consolidated AI service
+        recipes = ai_generate_recipes(ingredients, health_profile)
         
-        Hãy gợi ý 3 món ăn ngon nhất có thể nấu. 
-        Ưu tiên các món sử dụng tối đa nguyên liệu hiện có.
-        Nếu thiếu nguyên liệu quan trọng, hãy liệt kê vào 'missing_ingredients'.
-        
-        Trả về JSON danh sách 'recipes', mỗi recipe có:
-        - title, ingredients, instructions (array), prep_time, difficulty, calories,
-        - health_score (0-100), health_benefits (array), health_warnings (array),
-        - missing_ingredients (array), available_ingredients (array).
-        """
-        
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
-        
-        json_match = re.search(r'\{.*\}', response.text, re.DOTALL)
-        if json_match:
-            result = json.loads(json_match.group())
-            return jsonify({"success": True, "data": result})
-        
-        empty_result = {"recipes": []}
-        return jsonify({"success": True, "data": empty_result})
+        return jsonify({
+            "success": True, 
+            "recipes": recipes,
+            "ingredients": ingredients
+        })
         
     except ValidationError as e:
         return jsonify({"success": False, "error": str(e)}), 400

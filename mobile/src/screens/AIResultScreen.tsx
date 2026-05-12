@@ -66,7 +66,7 @@ export default function AIResultScreen({ route, navigation }: Props) {
   const [isScanning, setIsScanning] = useState(!initialRecipe);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Đang khởi tạo...');
-  const [recipes, setRecipes] = useState<Recipe[]>(initialRecipe ? [initialRecipe] : []);
+  const [recipes, setRecipes] = useState<Recipe[]>(initialRecipe && !initialRecipe.title.toLowerCase().includes('lỗi') ? [initialRecipe] : []);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>(initialIngredients || (initialRecipe ? initialRecipe.ingredients : []));
 
   // Hiệu ứng xoay vòng thông báo loading để tăng cảm giác phản hồi nhanh
@@ -319,8 +319,11 @@ export default function AIResultScreen({ route, navigation }: Props) {
         });
         
         if (suggestResponse.data && suggestResponse.data.recipes) {
-          setRecipes(suggestResponse.data.recipes);
-          checkIfBookmarked(suggestResponse.data.recipes);
+          const validRecipes = suggestResponse.data.recipes.filter((r: any) => 
+            r.title && !r.title.toLowerCase().includes('lỗi') && !r.title.toLowerCase().includes('không thể')
+          );
+          setRecipes(validRecipes);
+          checkIfBookmarked(validRecipes);
         }
         setIsSuggesting(false);
       } else {
@@ -552,12 +555,19 @@ export default function AIResultScreen({ route, navigation }: Props) {
           </View>
           
           <View style={[styles.tagsContainer, { marginBottom: spacing.xl }]}>
-            {detectedIngredients.map((item, index) => (
-              <View key={index} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, backgroundColor: `${colors.success}15`, borderColor: colors.success }}>
-                <Ionicons name="checkmark-circle" size={14} color={colors.success} style={{ marginRight: 4 }} />
-                <Text style={{ fontWeight: 'bold', fontSize: 13, color: colors.success }}>{item}</Text>
+            {detectedIngredients.length > 0 ? (
+              detectedIngredients.map((item, index) => (
+                <View key={index} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, backgroundColor: `${colors.success}15`, borderColor: `${colors.success}40` }}>
+                  <Ionicons name="checkmark-circle" size={14} color={colors.success} style={{ marginRight: 6 }} />
+                  <Text style={{ fontWeight: 'bold', fontSize: 13, color: colors.textPrimary }}>{item}</Text>
+                </View>
+              ))
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, backgroundColor: `${colors.error}10`, borderWidth: 1, borderColor: `${colors.error}30`, width: '100%' }}>
+                <Ionicons name="alert-circle" size={20} color={colors.error} style={{ marginRight: 10 }} />
+                <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>Không nhận diện được nguyên liệu rõ ràng. Hãy thử chụp ảnh khác hoặc nhập tay nhé!</Text>
               </View>
-            ))}
+            )}
           </View>
 
           {/* Section: Gợi ý món ăn */}
@@ -677,7 +687,13 @@ export default function AIResultScreen({ route, navigation }: Props) {
                 <AnimatedButton 
                   activeOpacity={0.7}
                   style={[styles.viewRecipeBtn, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]} 
-                  onPress={() => setSelectedRecipe(recipe)}
+                  onPress={() => {
+                    if (recipe.title.toLowerCase().includes('lỗi') || recipe.title.toLowerCase().includes('không thể')) {
+                      AlertManager.alert('Hệ thống', 'Không thể xem chi tiết công thức do lỗi kết nối từ AI.');
+                      return;
+                    }
+                    setSelectedRecipe(recipe);
+                  }}
                 >
                   <Text style={[styles.viewRecipeText, typography.h3, { color: '#FFF' }]}>Xem công thức</Text>
                   <Ionicons name="chevron-forward" size={18} color="#FFF" style={{ marginLeft: 4 }} />
